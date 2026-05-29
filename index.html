@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚔️ IRON QUEST</title>
+<style>
+:root {
+  --bg: #08080f;
+  --bg-card: #111120;
+  --bg-card2: #181830;
+  --border: #252545;
+  --gold: #ffd700;
+  --gold-dim: #a8860c;
+  --purple: #7c3aed;
+  --purple-light: #a78bfa;
+  --green: #22c55e;
+  --red: #ef4444;
+  --orange: #f97316;
+  --blue: #3b82f6;
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+  --tier-s: #ff6b35;
+  --tier-a: #7c3aed;
+  --tier-b: #3b82f6;
+  --tier-c: #22c55e;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,sans-serif;
+  display:flex; flex-direction:column;
+}
+
+/* ─── DESKTOP HEADER (hidden on mobile) ─── */
+.dsk-header { display:none; }
+
+/* ─── MAIN LAYOUT (nav + content wrapper) ─── */
+#main-layout { display:flex; flex:1; overflow:hidden; }
+
+/* ─── SCROLLABLE CONTENT ─── */
+#app-content {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  padding: 16px 14px 80px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── NAV (mobile: fixed bottom bar) ─── */
+.nav {
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--bg-card); border-top:1px solid var(--border);
+  display:flex; z-index:200; padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex:1; padding:10px 4px; background:none; border:none;
+  color:var(--text-dim); font-size:10px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:3px; transition:color .2s;
+}
+.nav-btn.active { color:var(--gold); }
+.nav-btn .ni { font-size:20px; line-height:1; }
+
+/* ─── RESPONSIVE WRAPPERS (stack on mobile, grid on desktop) ─── */
+.rsp-row > * { display:block; }   /* children stack on mobile */
+
+/* ─── PAGES ─── */
+.page { display:none; animation:fadeIn .2s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── CARDS ─── */
+.card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:14px; padding:16px; margin-bottom:12px;
+}
+.card-title {
+  font-size:10px; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--text-dim); margin-bottom:12px; font-weight:700;
+}
+
+/* ─── HERO ─── */
+.hero {
+  background:linear-gradient(135deg,#12123a 0%,#0a0a1e 100%);
+  border:1px solid #2a2a5a; border-radius:16px; padding:18px;
+  margin-bottom:12px; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-40%; right:-10%; width:220px; height:220px;
+  background:radial-gradient(circle,rgba(124,58,237,.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+.rank-badge {
+  display:inline-block; padding:3px 12px; border-radius:20px;
+  font-size:10px; font-weight:800; letter-spacing:1px; margin-bottom:8px;
+}
+.rank-bronze { background:linear-gradient(90deg,#7c4a1a,#cd7f32); color:#fff; }
+.rank-silver { background:linear-gradient(90deg,#555,#c0c0c0); color:#fff; }
+.rank-gold   { background:linear-gradient(90deg,#a8860c,#ffd700); color:#000; }
+.rank-plat   { background:linear-gradient(90deg,#5b21b6,#a78bfa); color:#fff; }
+.rank-elite  { background:linear-gradient(90deg,#ff6b35,#ffd700); color:#000; }
+.hero-lv   { font-size:20px; font-weight:800; color:var(--gold); margin-bottom:2px; }
+.hero-ttl  { font-size:11px; color:var(--purple-light); font-style:italic; margin-bottom:14px; }
+
+/* ─── PROGRESS ─── */
+.pg-row { margin-bottom:10px; }
+.pg-label { display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; }
+.pg-label .lbl { color:var(--text-dim); }
+.pg-label .val { font-weight:700; }
+.pg-bar { height:8px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden; }
+.pg-fill { height:100%; border-radius:4px; transition:width .5s ease; }
+.pg-fill.fp  { background:linear-gradient(90deg,#a8860c,#ffd700); }
+.pg-fill.exp { background:linear-gradient(90deg,#4c1d95,#7c3aed); }
+.pg-fill.gn  { background:linear-gradient(90deg,#15803d,#22c55e); }
+.pg-fill.rd  { background:linear-gradient(90deg,#991b1b,#ef4444); }
+
+/* ─── STREAK ─── */
+.streak-box {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(249,115,22,.07); border:1px solid rgba(249,115,22,.25);
+  border-radius:12px; padding:12px 16px; margin-bottom:12px;
+}
+.streak-n { font-size:30px; font-weight:900; color:var(--orange); }
+
+/* ─── STATS GRID ─── */
+.sg { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.sb { background:var(--bg-card2); border-radius:12px; padding:14px; text-align:center; border:1px solid var(--border); }
+.sb-v { font-size:26px; font-weight:800; }
+.sb-l { font-size:10px; color:var(--text-dim); margin-top:2px; }
+
+/* ─── BUTTONS ─── */
+.btn {
+  border:none; border-radius:10px; padding:13px 18px;
+  font-size:14px; font-weight:700; cursor:pointer; width:100%;
+  transition:all .15s; letter-spacing:.3px;
+}
+.btn:active { transform:scale(.97); }
+.btn-gold   { background:linear-gradient(90deg,#a8860c,#ffd700); color:#000; }
+.btn-purple { background:linear-gradient(90deg,#4c1d95,#7c3aed); color:#fff; }
+.btn-green  { background:linear-gradient(90deg,#15803d,#22c55e); color:#fff; }
+.btn-red    { background:linear-gradient(90deg,#991b1b,#ef4444); color:#fff; }
+.btn-outline{ background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-sm     { padding:8px 14px; font-size:12px; width:auto; }
+.btn-xs     { padding:6px 10px; font-size:11px; width:auto; }
+
+/* ─── DAY SELECTOR ─── */
+.day-sel { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.day-btn {
+  padding:12px 6px; border-radius:12px; border:1px solid var(--border);
+  background:var(--bg-card2); color:var(--text-dim); cursor:pointer;
+  text-align:center; font-size:13px; font-weight:700; transition:all .2s;
+}
+.day-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(255,215,0,.06); }
+.day-em { font-size:24px; display:block; margin-bottom:3px; }
+
+/* ─── EXERCISE ─── */
+.ex-item {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  background:var(--bg-card2); border-radius:10px; margin-bottom:6px;
+  border:1px solid var(--border);
+}
+.tier-badge {
+  width:26px; height:26px; border-radius:6px; font-size:11px; font-weight:900;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.tS { background:var(--tier-s); color:#fff; }
+.tA { background:var(--tier-a); color:#fff; }
+.tB { background:var(--tier-b); color:#fff; }
+.tC { background:var(--tier-c); color:#fff; }
+.ex-name { flex:1; font-size:13px; font-weight:600; }
+.ex-fp { font-size:10px; color:var(--gold-dim); }
+.sets-ctrl { display:flex; align-items:center; gap:8px; }
+.sets-btn {
+  width:30px; height:30px; border-radius:50%; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; line-height:1; font-weight:700;
+}
+.sets-n { font-size:16px; font-weight:800; min-width:22px; text-align:center; }
+
+/* ─── FP PREVIEW ─── */
+.fp-prev {
+  background:var(--bg-card); border:1px solid rgba(255,215,0,.3);
+  border-radius:14px; padding:16px; text-align:center; margin-bottom:12px;
+}
+.fp-prev-n { font-size:40px; font-weight:900; color:var(--gold); line-height:1; }
+.fp-prev-b { font-size:11px; color:var(--text-dim); margin-top:6px; }
+
+/* ─── BONUS CHECKS ─── */
+.bonus-row {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  background:var(--bg-card2); border-radius:10px; margin-bottom:6px; cursor:pointer;
+}
+.bonus-row label { display:flex; align-items:center; gap:10px; cursor:pointer; width:100%; }
+.bonus-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--gold); flex-shrink:0; }
+.bonus-row-txt { font-size:13px; flex:1; }
+
+/* ─── SHOP ─── */
+.shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.shop-item {
+  background:var(--bg-card2); border:1px solid var(--border);
+  border-radius:12px; padding:14px 10px; text-align:center; cursor:pointer;
+  transition:all .2s; user-select:none;
+}
+.shop-item:active { transform:scale(.96); }
+.shop-item.ok { border-color:rgba(255,215,0,.3); }
+.shop-item.no { opacity:.45; cursor:default; }
+.shop-em { font-size:34px; margin-bottom:8px; }
+.shop-nm { font-size:11px; color:var(--text-dim); margin-bottom:6px; min-height:28px; display:flex; align-items:center; justify-content:center; }
+.shop-pr { font-size:15px; font-weight:800; color:var(--gold); }
+
+/* ─── QUEST ─── */
+.quest-card {
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  background:var(--bg-card2); border-radius:12px; margin-bottom:8px;
+  border:1px solid var(--border);
+}
+.quest-card.done { border-color:rgba(34,197,94,.4); opacity:.7; }
+.quest-ic { font-size:26px; flex-shrink:0; }
+.quest-info { flex:1; }
+.quest-nm { font-size:13px; font-weight:700; margin-bottom:3px; }
+.quest-rw { font-size:11px; color:var(--gold-dim); }
+.quest-btn {
+  padding:7px 12px; border-radius:8px; border:none;
+  background:var(--green); color:#fff; font-size:11px; font-weight:700; cursor:pointer;
+  white-space:nowrap;
+}
+.quest-btn:disabled { background:var(--text-dim); cursor:not-allowed; }
+
+/* ─── DAILY ─── */
+.habit-row {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.habit-row:last-child { border-bottom:none; }
+.habit-ic { font-size:26px; width:36px; text-align:center; flex-shrink:0; }
+.habit-info { flex:1; }
+.habit-nm { font-size:13px; font-weight:700; }
+.habit-tgt { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.habit-input {
+  width:72px; padding:8px 6px; border-radius:8px;
+  border:1px solid var(--border); background:var(--bg);
+  color:var(--text); font-size:15px; font-weight:700; text-align:center;
+}
+.habit-st { font-size:20px; width:26px; text-align:center; }
+
+/* ─── PENALTY ─── */
+.pen-btn {
+  display:flex; align-items:center; gap:12px; padding:13px 14px;
+  background:rgba(239,68,68,.05); border:1px solid rgba(239,68,68,.2);
+  border-radius:12px; margin-bottom:8px; width:100%; cursor:pointer;
+  text-align:left; transition:background .2s;
+}
+.pen-btn:active { background:rgba(239,68,68,.12); }
+.pen-ic { font-size:22px; }
+.pen-info { flex:1; }
+.pen-nm { font-size:13px; color:var(--text); font-weight:700; }
+.pen-am { font-size:14px; color:var(--red); font-weight:800; }
+
+/* ─── ACHIEVEMENT ─── */
+.ach-item {
+  display:flex; align-items:center; gap:12px; padding:12px;
+  background:var(--bg-card2); border-radius:12px; margin-bottom:8px;
+  border:1px solid var(--border);
+}
+.ach-item.ul { border-color:rgba(255,215,0,.35); }
+.ach-item.lk { opacity:.35; }
+.ach-ic {
+  font-size:28px; width:48px; height:48px; display:flex;
+  align-items:center; justify-content:center;
+  background:var(--bg); border-radius:10px; flex-shrink:0;
+}
+.ach-info { flex:1; }
+.ach-nm { font-size:13px; font-weight:800; margin-bottom:3px; }
+.ach-ds { font-size:11px; color:var(--text-dim); }
+.ach-xp { font-size:12px; color:var(--purple-light); font-weight:700; }
+
+/* ─── INFO ROW ─── */
+.ir { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.ir:last-child { border-bottom:none; }
+.ir .lbl { color:var(--text-dim); }
+.ir .val { font-weight:700; }
+
+/* ─── TOAST ─── */
+.toast {
+  position:fixed; top:16px; left:50%;
+  transform:translateX(-50%) translateY(-120px);
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:14px; padding:12px 22px; font-size:14px; font-weight:700;
+  z-index:1000; transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap; max-width:340px; text-align:center; pointer-events:none;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.gold   { border-color:var(--gold); color:var(--gold); }
+.toast.red    { border-color:var(--red); color:var(--red); }
+.toast.green  { border-color:var(--green); color:var(--green); }
+.toast.purple { border-color:var(--purple-light); color:var(--purple-light); }
+
+/* ─── MODAL ─── */
+.m-ov {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.82);
+  z-index:500; align-items:flex-end; justify-content:center;
+}
+.m-ov.show { display:flex; }
+.modal {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:20px 20px 0 0; padding:24px 20px;
+  width:100%; max-width:430px; text-align:center;
+  animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);
+  max-height:90vh; overflow-y:auto;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.m-em { font-size:52px; margin-bottom:10px; }
+.m-ttl { font-size:22px; font-weight:800; margin-bottom:6px; }
+.m-sub { font-size:13px; color:var(--text-dim); margin-bottom:14px; }
+.m-fp { font-size:34px; font-weight:900; color:var(--gold); margin-bottom:16px; }
+
+/* ─── WEEK DOTS ─── */
+.wk-days { display:flex; gap:6px; justify-content:center; padding:4px 0; }
+.wk-d {
+  width:38px; height:38px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; color:var(--text-dim); flex-direction:column; gap:1px;
+}
+.wk-d.done { background:var(--green); border-color:var(--green); color:#fff; font-size:16px; }
+.wk-d.today { border-color:var(--gold); color:var(--gold); }
+.wk-d-lbl { font-size:9px; }
+
+/* ─── TAGS ─── */
+.tag { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+.tag-gold   { background:rgba(255,215,0,.12); color:var(--gold); }
+.tag-purple { background:rgba(124,58,237,.15); color:var(--purple-light); }
+.tag-red    { background:rgba(239,68,68,.12); color:var(--red); }
+.tag-green  { background:rgba(34,197,94,.12); color:var(--green); }
+
+/* ─── SECTION HEADER ─── */
+.sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.sh-t { font-size:16px; font-weight:800; }
+
+/* ─── CHAR STATS ─── */
+.cs-row { margin-bottom:10px; }
+.cs-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
+.cs-bar { height:10px; background:rgba(255,255,255,.07); border-radius:5px; overflow:hidden; }
+.cs-fill { height:100%; border-radius:5px; transition:width .6s ease; }
+
+/* ─── HISTORY LOG ─── */
+.log-entry { padding:7px 0; border-bottom:1px solid var(--border); }
+.log-entry:last-child { border-bottom:none; }
+.log-msg { font-size:12px; }
+.log-time { font-size:10px; color:var(--text-dim); margin-top:2px; }
+
+/* ─── SELECT / INPUT ─── */
+select, input[type=number] {
+  background:var(--bg); border:1px solid var(--border);
+  color:var(--text); border-radius:10px; padding:10px 12px; font-size:14px;
+}
+select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+
+/* ─── DIVIDER ─── */
+.div { height:1px; background:var(--border); margin:14px 0; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* ─── LOGIN OVERLAY ─── */
+#loginOverlay {
+  position:fixed; inset:0; z-index:900;
+  background:var(--bg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:20px; overflow-y:auto;
+}
+#loginOverlay.hidden { display:none; }
+.lo-logo { font-size:34px; font-weight:900; color:var(--gold); letter-spacing:1px; margin-bottom:4px; }
+.lo-sub  { font-size:13px; color:var(--text-dim); margin-bottom:24px; text-align:center; }
+.char-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+  width:100%; max-width:400px; margin-bottom:14px;
+}
+.char-card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:14px;
+  padding:16px 8px; text-align:center; cursor:pointer; transition:all .2s; user-select:none;
+}
+.char-card:active { transform:scale(.95); }
+.char-card.new-btn { border-style:dashed; color:var(--text-dim); }
+.char-avatar { font-size:36px; margin-bottom:6px; line-height:1.2; }
+.char-name { font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.char-lv   { font-size:10px; color:var(--text-dim); margin-top:2px; }
+.pin-wrap  { width:100%; max-width:290px; text-align:center; }
+.pin-user  { font-size:44px; margin-bottom:4px; line-height:1.2; }
+.pin-name  { font-size:18px; font-weight:800; margin-bottom:20px; }
+.pin-dots  { display:flex; gap:14px; justify-content:center; margin-bottom:20px; }
+.pin-dot   { width:16px; height:16px; border-radius:50%; border:2px solid var(--border); transition:background .15s; }
+.pin-dot.filled { background:var(--gold); border-color:var(--gold); }
+.pin-grid  { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.pin-key   {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+  padding:16px 6px; font-size:20px; font-weight:700; cursor:pointer;
+  transition:all .15s; text-align:center; user-select:none;
+}
+.pin-key:active { background:var(--bg-card2); transform:scale(.93); }
+.pin-key.del { color:var(--red); }
+.pin-key.ok  { color:var(--green); background:rgba(34,197,94,.07); border-color:rgba(34,197,94,.25); }
+.pin-back  { font-size:12px; color:var(--text-dim); cursor:pointer; margin-top:18px; display:inline-block; }
+.pin-err   { font-size:12px; color:var(--red); min-height:18px; margin-bottom:8px; }
+.create-wrap label { font-size:12px; color:var(--text-dim); display:block; margin:12px 0 4px; }
+.create-wrap input[type=text] {
+  width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg-card); color:var(--text); font-size:15px;
+}
+.avatar-grid { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; justify-content:center; }
+.avatar-opt  {
+  width:44px; height:44px; border-radius:10px; font-size:24px;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--border); cursor:pointer; background:var(--bg-card2); transition:all .15s;
+}
+.avatar-opt.sel { border-color:var(--gold); background:rgba(255,215,0,.1); transform:scale(1.1); }
+/* Desktop header user chip */
+.dsk-user-chip {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:20px; padding:6px 14px; cursor:pointer;
+  font-size:13px; font-weight:700; transition:background .2s; user-select:none;
+}
+.dsk-user-chip:hover { background:rgba(255,255,255,.09); }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE — TABLET / DESKTOP ≥ 768px
+   ══════════════════════════════════════════ */
+@media (min-width:768px) {
+
+  /* ─── Desktop Header ─── */
+  .dsk-header {
+    display:flex; align-items:center; gap:14px;
+    height:58px; padding:0 24px; flex-shrink:0;
+    background:var(--bg-card); border-bottom:1px solid var(--border);
+  }
+  .dsk-logo {
+    font-size:18px; font-weight:900; color:var(--gold);
+    letter-spacing:.5px;
+  }
+  .dsk-fp {
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,215,0,.07); border:1px solid rgba(255,215,0,.2);
+    border-radius:20px; padding:6px 14px;
+    font-size:14px; font-weight:800; color:var(--gold);
+  }
+
+  /* ─── Sidebar Nav ─── */
+  .nav {
+    position:static; flex-direction:column;
+    width:200px; min-width:200px; height:100%;
+    border-top:none; border-right:1px solid var(--border);
+    padding:14px 10px; justify-content:flex-start;
+    gap:2px; overflow-y:auto;
+    order:-1; /* sidebar ต้องอยู่ซ้าย ก่อน app-content */
+  }
+  .nav-btn {
+    flex:none; flex-direction:row; justify-content:flex-start;
+    gap:12px; padding:11px 14px; border-radius:10px;
+    font-size:14px; font-weight:600;
+    border:1px solid transparent;
+  }
+  .nav-btn .ni { font-size:18px; }
+  .nav-btn.active {
+    background:rgba(255,215,0,.07);
+    border-color:rgba(255,215,0,.2);
+    color:var(--gold);
+  }
+
+  /* ─── Content area ─── */
+  #app-content { padding:22px 28px 28px; height:100%; }
+
+  /* ─── Pages use block by default, grid when .page.active ─── */
+  .page.active { display:block; }
+
+  /* ─── Responsive row: 2 equal columns ─── */
+  .rsp-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    align-items:start;
+  }
+  /* Full-width child inside rsp-row */
+  .rsp-full { grid-column:1 / -1; }
+
+  /* ─── Day selector: 4 cols on desktop ─── */
+  .day-sel { grid-template-columns:repeat(4,1fr); }
+
+  /* ─── Shop: 3 cols ─── */
+  .shop-grid { grid-template-columns:repeat(3,1fr) !important; }
+
+  /* ─── Stats grid: 4 cols ─── */
+  .sg { grid-template-columns:repeat(4,1fr); }
+
+  /* ─── Hero: slightly bigger padding ─── */
+  .hero { padding:24px 28px; }
+
+  /* ─── Streak box fills col nicely ─── */
+  .streak-box { margin-bottom:14px; }
+}
+
+/* ══════════════════════════════════════════
+   LARGE DESKTOP ≥ 1200px
+   ══════════════════════════════════════════ */
+@media (min-width:1200px) {
+  .nav { width:220px; min-width:220px; }
+  #app-content { padding:28px 40px 32px; }
+  .shop-grid { grid-template-columns:repeat(4,1fr) !important; }
+  .rsp-row { gap:18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ LOGIN OVERLAY ══════════════════════════ -->
+<div id="loginOverlay">
+
+  <!-- Phase 1: Select Character -->
+  <div id="loPhase1">
+    <div class="lo-logo">⚔️ IRON QUEST</div>
+    <div class="lo-sub">เลือก Character ที่ต้องการเล่น<br>หรือสร้างตัวละครใหม่</div>
+    <div class="char-grid" id="charGrid">
+      <div style="color:var(--text-dim);font-size:13px;grid-column:1/-1;text-align:center">กำลังโหลด...</div>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);text-align:center">สูงสุด 5 users / เครื่อง</div>
+  </div>
+
+  <!-- Phase 2: PIN Entry -->
+  <div id="loPhase2" style="display:none">
+    <div class="pin-wrap">
+      <div class="pin-user" id="pinAvatar">🧙</div>
+      <div class="pin-name" id="pinName">Username</div>
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-err" id="pinErr"></div>
+      <div class="pin-grid">
+        <div class="pin-key" onclick="pinKey('1')">1</div>
+        <div class="pin-key" onclick="pinKey('2')">2</div>
+        <div class="pin-key" onclick="pinKey('3')">3</div>
+        <div class="pin-key" onclick="pinKey('4')">4</div>
+        <div class="pin-key" onclick="pinKey('5')">5</div>
+        <div class="pin-key" onclick="pinKey('6')">6</div>
+        <div class="pin-key" onclick="pinKey('7')">7</div>
+        <div class="pin-key" onclick="pinKey('8')">8</div>
+        <div class="pin-key" onclick="pinKey('9')">9</div>
+        <div class="pin-key del" onclick="pinKey('del')">←</div>
+        <div class="pin-key" onclick="pinKey('0')">0</div>
+        <div class="pin-key ok" onclick="pinKey('ok')">✓</div>
+      </div>
+      <div class="pin-back" onclick="showPhase(1)">← เลือก Character ใหม่</div>
+    </div>
+  </div>
+
+  <!-- Phase 3: Create new user -->
+  <div id="loPhase3" style="display:none">
+    <div class="pin-wrap create-wrap">
+      <div style="font-size:20px;font-weight:800;margin-bottom:4px;text-align:center">✨ สร้าง Character ใหม่</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;text-align:center">เลือก Avatar, ชื่อ และ PIN 4 หลัก</div>
+
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">เลือก Avatar</div>
+      <div class="avatar-grid" id="avatarGrid"></div>
+
+      <label>ชื่อ Character (สูงสุด 16 ตัวอักษร)</label>
+      <input type="text" id="createName" maxlength="16" placeholder="กรอกชื่อ...">
+
+      <label>ตั้ง PIN 4 หลัก</label>
+      <div class="pin-dots" style="justify-content:center;margin:10px 0 6px" id="createDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-grid" style="margin-bottom:4px">
+        <div class="pin-key" onclick="createKey('1')">1</div>
+        <div class="pin-key" onclick="createKey('2')">2</div>
+        <div class="pin-key" onclick="createKey('3')">3</div>
+        <div class="pin-key" onclick="createKey('4')">4</div>
+        <div class="pin-key" onclick="createKey('5')">5</div>
+        <div class="pin-key" onclick="createKey('6')">6</div>
+        <div class="pin-key" onclick="createKey('7')">7</div>
+        <div class="pin-key" onclick="createKey('8')">8</div>
+        <div class="pin-key" onclick="createKey('9')">9</div>
+        <div class="pin-key del" onclick="createKey('del')">←</div>
+        <div class="pin-key" onclick="createKey('0')">0</div>
+        <div class="pin-key" style="opacity:.3;color:var(--green)" id="createOk">✓</div>
+      </div>
+      <div class="pin-err" id="createErr"></div>
+
+      <button class="btn btn-gold" style="margin-top:10px" onclick="submitCreate()">⚔️ สร้าง Character!</button>
+      <div class="pin-back" onclick="showPhase(1)" style="display:block;text-align:center;margin-top:10px">← กลับ</div>
+    </div>
+  </div>
+
+</div><!-- /loginOverlay -->
+
+<div id="toast" class="toast"></div>
+
+<!-- Modal -->
+<div id="mOverlay" class="m-ov" onclick="if(event.target===this)closeModal()">
+  <div id="modal" class="modal"></div>
+</div>
+
+<!-- ══════════════════════════════ DESKTOP HEADER ══════════════════════════════ -->
+<header class="dsk-header">
+  <div class="dsk-logo">⚔️ IRON QUEST</div>
+  <div style="flex:1"></div>
+  <div class="dsk-fp" id="dskFP">⚡ 0 FP</div>
+  <div id="dskRank" class="rank-badge rank-bronze" style="margin-left:8px">🥉 Lv.1</div>
+  <div class="dsk-user-chip" id="dskUser" onclick="doLogout()" style="margin-left:10px">
+    <span id="dskAvatar">🧙</span>
+    <span id="dskUsername">—</span>
+    <span style="font-size:10px;color:var(--text-dim)">• Logout</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════ MAIN LAYOUT (sidebar + content) ══════════════════════════════ -->
+<div id="main-layout">
+
+<!-- ══════════════════════════════ APP CONTENT ══════════════════════════════ -->
+<div id="app-content">
+
+<!-- ─────────────────── PAGE: HOME ─────────────────── -->
+<div id="page-home" class="page active">
+
+  <!-- Hero Card -->
+  <div class="hero" id="heroCard">
+    <div id="rankBadge" class="rank-badge rank-bronze">🥉 BRONZE</div>
+    <div class="hero-lv" id="heroLv">Level 1 — Iron Rookie</div>
+    <div class="hero-ttl" id="heroTtl">"The journey begins..."</div>
+    <div class="pg-row">
+      <div class="pg-label"><span class="lbl">⚡ Fitness Points</span><span class="val" id="fpDisp">0 FP</span></div>
+      <div class="pg-bar"><div class="pg-fill fp" id="fpBar" style="width:0%"></div></div>
+    </div>
+    <div class="pg-row" style="margin-bottom:0">
+      <div class="pg-label"><span class="lbl">✨ EXP</span><span class="val" id="expDisp">0 / 500</span></div>
+      <div class="pg-bar"><div class="pg-fill exp" id="expBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- ─ Row 1: Streak/Weekly LEFT | Stats RIGHT ─ -->
+  <div class="rsp-row" style="margin-bottom:14px">
+
+    <div><!-- left col -->
+      <!-- Streak -->
+      <div class="streak-box">
+        <div style="font-size:36px;line-height:1">🔥</div>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span class="streak-n" id="streakN">0</span>
+            <span style="font-size:13px;color:var(--text-dim)">day streak</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim)" id="streakSub">เริ่ม streak วันนี้!</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:10px;color:var(--text-dim)">สัปดาห์นี้</div>
+          <div style="font-size:18px;font-weight:800" id="weekCount">0/6</div>
+          <div style="font-size:10px;color:var(--text-dim)">วัน</div>
+        </div>
+      </div>
+      <!-- Week dots -->
+      <div class="card" style="padding:14px">
+        <div class="card-title">Weekly Progress</div>
+        <div class="wk-days" id="wkDays"></div>
+      </div>
+    </div><!-- /left col -->
+
+    <div><!-- right col -->
+      <!-- Stats grid -->
+      <div class="sg" style="margin-bottom:0">
+        <div class="sb"><div class="sb-v" id="stFP" style="color:var(--gold)">0</div><div class="sb-l">Total FP Earned</div></div>
+        <div class="sb"><div class="sb-v" id="stWO" style="color:var(--purple-light)">0</div><div class="sb-l">Workouts Done</div></div>
+        <div class="sb"><div class="sb-v" id="stPR" style="color:var(--green)">0</div><div class="sb-l">PRs Hit</div></div>
+        <div class="sb"><div class="sb-v" id="stPN" style="color:var(--red)">0</div><div class="sb-l">Penalties</div></div>
+      </div>
+    </div><!-- /right col -->
+
+  </div><!-- /rsp-row 1 -->
+
+  <!-- ─ Row 2: Daily Quests LEFT | Weekly Quest RIGHT ─ -->
+  <div class="rsp-row">
+
+    <div><!-- left col -->
+      <div class="card">
+        <div class="sh">
+          <div class="sh-t">⚡ Daily Quests</div>
+          <span class="tag tag-gold" id="dqTag">0/2</span>
+        </div>
+        <div id="dqList"></div>
+      </div>
+    </div><!-- /left col -->
+
+    <div><!-- right col -->
+      <div class="card">
+        <div class="sh"><div class="sh-t">📜 Weekly Quest</div></div>
+        <div id="wqDisplay"></div>
+      </div>
+    </div><!-- /right col -->
+
+  </div><!-- /rsp-row 2 -->
+
+</div><!-- /home -->
+
+<!-- ─────────────────── PAGE: WORKOUT ─────────────────── -->
+<div id="page-workout" class="page">
+
+  <div class="sh" style="margin-bottom:14px">
+    <div class="sh-t">💪 Log Workout</div>
+    <span style="font-size:11px;color:var(--text-dim)" id="wkDateDisp"></span>
+  </div>
+
+  <!-- Day selector -->
+  <div class="day-sel">
+    <div class="day-btn active" id="btnPush"   onclick="selDay('push')"><span class="day-em">🫸</span>PUSH</div>
+    <div class="day-btn"        id="btnPull"   onclick="selDay('pull')"><span class="day-em">🫷</span>PULL</div>
+    <div class="day-btn"        id="btnLeg"    onclick="selDay('leg')"><span class="day-em">🦵</span>LEG</div>
+    <div class="day-btn"        id="btnCustom" onclick="selDay('custom')"><span class="day-em">⚡</span>MIX</div>
+  </div>
+
+  <!-- ─ Responsive row: Exercise list LEFT | Options RIGHT ─ -->
+  <div class="rsp-row" style="align-items:start">
+
+    <div><!-- left col: exercise list -->
+      <div class="card">
+        <div class="card-title" id="woDayLbl">PUSH DAY ☀️</div>
+        <div id="exList"></div>
+      </div>
+    </div>
+
+    <div><!-- right col: options + log button -->
+      <!-- Volume -->
+      <div class="card">
+        <div class="card-title">Volume Completion</div>
+        <select id="volSel" onchange="calcPreview()">
+          <option value="1.0">✅ 100% — ครบทุก set (+30 FP completion bonus)</option>
+          <option value="0.85">🟡 80–99% — เกือบครบ</option>
+          <option value="0.6">🟠 60–79% — ทำได้บ้าง</option>
+          <option value="0.3">🔴 &lt;60% — ทำได้นิดหน่อย</option>
+        </select>
+      </div>
+      <!-- Bonuses -->
+      <div class="card">
+        <div class="card-title">Bonus</div>
+        <div class="bonus-row"><label><input type="checkbox" id="bPO" onchange="calcPreview()"><span class="bonus-row-txt">Progressive Overload — เพิ่ม weight</span><span class="tag tag-gold">+25 FP</span></label></div>
+        <div class="bonus-row"><label><input type="checkbox" id="bPOR" onchange="calcPreview()"><span class="bonus-row-txt">Overload — weight เดิม เพิ่ม reps</span><span class="tag tag-gold">+10 FP</span></label></div>
+        <div class="bonus-row"><label><input type="checkbox" id="bPR" onchange="calcPreview()"><span class="bonus-row-txt">Hit PR (Personal Record!) 🏆</span><span class="tag tag-purple">+25FP +150EXP</span></label></div>
+        <div class="bonus-row"><label><input type="checkbox" id="bCardio" onchange="calcPreview()"><span class="bonus-row-txt">Cardio ≥ 20 นาที หลัง workout</span><span class="tag tag-green">+15 FP</span></label></div>
+      </div>
+      <!-- FP Preview -->
+      <div class="fp-prev">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">FP ที่จะได้รับ</div>
+        <div class="fp-prev-n" id="fpPrevN">0 FP</div>
+        <div class="fp-prev-b" id="fpPrevB">เพิ่ม sets เพื่อเริ่มนับ</div>
+      </div>
+      <button class="btn btn-gold" onclick="logWorkout()">⚔️ LOG WORKOUT — Earn FP!</button>
+    </div><!-- /right col -->
+
+  </div><!-- /rsp-row -->
+  <div style="height:8px"></div>
+</div><!-- /workout -->
+
+<!-- ─────────────────── PAGE: DAILY ─────────────────── -->
+<div id="page-daily" class="page">
+
+  <div class="sh" style="margin-bottom:14px">
+    <div class="sh-t">📋 Daily Tracker</div>
+    <span style="font-size:11px;color:var(--text-dim)" id="dailyDateDisp"></span>
+  </div>
+
+  <!-- ─ Responsive row: Habits LEFT | Penalty RIGHT ─ -->
+  <div class="rsp-row">
+  <div><!-- left col -->
+
+  <!-- Habits -->
+  <div class="card">
+    <div class="card-title">Life Stats วันนี้</div>
+    <div class="habit-row">
+      <div class="habit-ic">🥩</div>
+      <div class="habit-info">
+        <div class="habit-nm">Protein</div>
+        <div class="habit-tgt">เป้า ≥150g → <span class="tag tag-gold">+15 FP</span></div>
+      </div>
+      <input class="habit-input" type="number" id="inProt" placeholder="0" min="0" max="500" oninput="liveHabit()">
+      <div class="habit-st" id="stProt">⬜</div>
+    </div>
+    <div class="habit-row">
+      <div class="habit-ic">😴</div>
+      <div class="habit-info">
+        <div class="habit-nm">Sleep</div>
+        <div class="habit-tgt">เป้า ≥7h → <span class="tag tag-gold">+10 FP</span></div>
+      </div>
+      <input class="habit-input" type="number" id="inSleep" placeholder="0" min="0" max="12" step="0.5" oninput="liveHabit()">
+      <div class="habit-st" id="stSleep">⬜</div>
+    </div>
+    <div class="habit-row">
+      <div class="habit-ic">💧</div>
+      <div class="habit-info">
+        <div class="habit-nm">Water</div>
+        <div class="habit-tgt">เป้า ≥2.5L → <span class="tag tag-green">+5 FP</span></div>
+      </div>
+      <input class="habit-input" type="number" id="inWater" placeholder="0" min="0" max="10" step="0.5" oninput="liveHabit()">
+      <div class="habit-st" id="stWater">⬜</div>
+    </div>
+    <div class="habit-row" style="border-bottom:none">
+      <div class="habit-ic">🥗</div>
+      <div class="habit-info">
+        <div class="habit-nm">No Junk / Beer (free)</div>
+        <div class="habit-tgt">ไม่กิน/ดื่มโดยไม่แลก → <span class="tag tag-gold">+20 FP</span></div>
+      </div>
+      <input type="checkbox" id="inClean" style="width:22px;height:22px;accent-color:var(--gold)">
+      <div class="habit-st" id="stClean">⬜</div>
+    </div>
+  </div>
+
+  <!-- Habit FP preview -->
+  <div style="background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.15);border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;color:var(--text-dim)">Habits FP วันนี้</span>
+    <span style="font-size:18px;font-weight:800;color:var(--gold)" id="habitFPPreview">+0 FP</span>
+  </div>
+
+  <button class="btn btn-green" style="margin-bottom:12px" onclick="saveHabits()">✅ Save Habits วันนี้</button>
+
+  </div><!-- /left col -->
+  <div><!-- right col -->
+
+  <!-- Penalty -->
+  <div class="card" style="border-color:rgba(239,68,68,.25)">
+    <div class="card-title" style="color:var(--red)">⚠️ Penalty — สารภาพที่นี่</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">กดถ้าทำสิ่งนี้โดย<strong>ไม่</strong>แลก FP ก่อน</div>
+    <button class="pen-btn" onclick="penalty('skip',80)"><span class="pen-ic">🚫</span><div class="pen-info"><div class="pen-nm">Skip Workout (ไม่ได้วางแผน)</div><div style="font-size:10px;color:var(--text-dim)">Streak รีเซ็ตด้วย</div></div><div class="pen-am">−80 FP</div></button>
+    <button class="pen-btn" onclick="penalty('junk',100)"><span class="pen-ic">🍟</span><div class="pen-info"><div class="pen-nm">กินของทอด / Junk Food</div></div><div class="pen-am">−100 FP</div></button>
+    <button class="pen-btn" onclick="penalty('beer',150)"><span class="pen-ic">🍺</span><div class="pen-info"><div class="pen-nm">ดื่มเบียร์ (ไม่ได้แลก)</div></div><div class="pen-am">−150 FP</div></button>
+    <button class="pen-btn" onclick="penalty('sleep',30)"><span class="pen-ic">😵</span><div class="pen-info"><div class="pen-nm">นอนน้อยกว่า 6 ชั่วโมง</div></div><div class="pen-am">−30 FP</div></button>
+    <button class="pen-btn" onclick="penalty('quit',40)"><span class="pen-ic">🏃</span><div class="pen-info"><div class="pen-nm">เลิก workout กลางคัน</div></div><div class="pen-am">−40 FP</div></button>
+  </div>
+
+  </div><!-- /right col -->
+  </div><!-- /rsp-row -->
+
+</div><!-- /daily -->
+
+<!-- ─────────────────── PAGE: SHOP ─────────────────── -->
+<div id="page-shop" class="page">
+
+  <div class="sh" style="margin-bottom:6px">
+    <div class="sh-t">🏪 Reward Shop</div>
+    <span style="font-size:16px;font-weight:800;color:var(--gold)" id="shopFP">0 FP</span>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+    ⚠️ กิน/ดื่มโดยไม่แลก FP = Penalty ทันที — ระบบ Honor-based
+  </div>
+
+  <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-dim)">🍺 อาหาร & เครื่องดื่ม</div>
+  <div class="shop-grid" id="shopFood"></div>
+
+  <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-dim)">🎮 Activities & Fun</div>
+  <div class="shop-grid" id="shopAct"></div>
+
+  <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-dim)">🛍️ Big Rewards</div>
+  <div class="shop-grid" id="shopBig"></div>
+
+  <div class="card" style="margin-top:4px">
+    <div class="card-title">Recent Purchases</div>
+    <div id="shopHist"></div>
+  </div>
+
+</div><!-- /shop -->
+
+<!-- ─────────────────── PAGE: PROFILE ─────────────────── -->
+<div id="page-profile" class="page">
+
+  <div class="sh" style="margin-bottom:14px"><div class="sh-t">👤 Character</div></div>
+
+  <!-- ─ Responsive row: Stats+Achievements LEFT | Log RIGHT ─ -->
+  <div class="rsp-row">
+
+    <div><!-- left col -->
+      <!-- Character stat bars -->
+      <div class="card">
+        <div class="card-title">Character Stats</div>
+        <div id="charStats"></div>
+      </div>
+      <!-- Achievements -->
+      <div class="card">
+        <div class="card-title">🏆 Achievements (<span id="achCount">0</span>/<span id="achTotal">0</span>)</div>
+        <div id="achList"></div>
+      </div>
+    </div><!-- /left col -->
+
+    <div><!-- right col -->
+      <!-- Activity log -->
+      <div class="card" style="height:auto">
+        <div class="card-title">📜 Activity Log</div>
+        <div id="actLog"></div>
+      </div>
+      <div class="card" style="padding:14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <span id="profileAvatar" style="font-size:36px">🧙</span>
+          <div>
+            <div style="font-size:15px;font-weight:800" id="profileUsername">—</div>
+            <div style="font-size:11px;color:var(--text-dim)">กำลังเล่นอยู่</div>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="margin-bottom:8px" onclick="doLogout()">🚪 Switch User / Logout</button>
+      </div>
+      <button class="btn btn-outline" style="margin-top:4px;color:var(--red);border-color:rgba(239,68,68,.4)" onclick="resetGame()">
+        🗑️ Reset All Data
+      </button>
+    </div><!-- /right col -->
+
+  </div><!-- /rsp-row -->
+  <div style="height:8px"></div>
+
+</div><!-- /profile -->
+
+<!-- ─────────────────── PAGE: RANK ─────────────────── -->
+<div id="page-rank" class="page">
+
+  <div class="sh" style="margin-bottom:16px">
+    <div class="sh-t">🏆 Leaderboard</div>
+    <button class="btn btn-outline btn-sm" onclick="renderRank()">🔄 Refresh</button>
+  </div>
+
+  <!-- Podium top 3 -->
+  <div class="card" id="rankPodium" style="padding:20px 12px 12px">
+    <div style="color:var(--text-dim);text-align:center;padding:16px">กำลังโหลด...</div>
+  </div>
+
+  <!-- Full list -->
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">FULL RANKING</div>
+    <div id="rankList"></div>
+  </div>
+
+  <div style="height:8px"></div>
+</div><!-- /rank -->
+
+</div><!-- /app-content -->
+
+<!-- ─────────────────── BOTTOM NAV ─────────────────── -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-home"    onclick="showPage('home')"><span class="ni">🏠</span>Home</button>
+  <button class="nav-btn"        id="nav-workout" onclick="showPage('workout')"><span class="ni">💪</span>Workout</button>
+  <button class="nav-btn"        id="nav-daily"   onclick="showPage('daily')"><span class="ni">📋</span>Daily</button>
+  <button class="nav-btn"        id="nav-shop"    onclick="showPage('shop')"><span class="ni">🏪</span>Shop</button>
+  <button class="nav-btn"        id="nav-rank"    onclick="showPage('rank')"><span class="ni">🏆</span>Rank</button>
+  <button class="nav-btn"        id="nav-profile" onclick="showPage('profile')"><span class="ni">👤</span>Profile</button>
+</nav>
+
+</div><!-- /main-layout -->
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
+<script>
+// ════════════════════════════════════════════════
+//  STATIC DATA
+// ════════════════════════════════════════════════
+
+const EXDB = {
+  push:[
+    {n:'Bench Press',t:'S',fp:8},{n:'OHP',t:'A',fp:5},{n:'Dip',t:'A',fp:5},
+    {n:'Incline DB/Barbell Press',t:'B',fp:3},{n:'DB Shoulder Press',t:'B',fp:3},
+    {n:'Cable/Machine Chest Fly',t:'C',fp:2},{n:'Lateral Raise',t:'C',fp:2},
+    {n:'Tricep Extension',t:'C',fp:2},{n:'Tricep Pushdown',t:'C',fp:2},
+  ],
+  pull:[
+    {n:'Weighted Pull-up',t:'S',fp:8},{n:'Deadlift',t:'S',fp:8},
+    {n:'Pull-up',t:'A',fp:5},{n:'Barbell Row',t:'A',fp:5},{n:'T-bar Row',t:'A',fp:5},
+    {n:'Cable Row',t:'B',fp:3},{n:'DB Row',t:'B',fp:3},
+    {n:'Face Pull',t:'C',fp:2},{n:'Curl',t:'C',fp:2},{n:'Hammer Curl',t:'C',fp:2},
+  ],
+  leg:[
+    {n:'Squat',t:'S',fp:8},{n:'Deadlift',t:'S',fp:8},
+    {n:'Bulgarian Split Squat',t:'A',fp:5},{n:'Leg Extension',t:'A',fp:5},
+    {n:'Leg Press',t:'B',fp:3},{n:'Leg Curl',t:'B',fp:3},
+    {n:'Hip Abduction',t:'C',fp:2},{n:'Hip Adduction',t:'C',fp:2},{n:'Calf Raise',t:'C',fp:2},
+  ],
+  custom:[
+    {n:'Bench Press',t:'S',fp:8,g:'💪 Chest'},{n:'Incline DB/Barbell Press',t:'B',fp:3,g:'💪 Chest'},{n:'Cable/Machine Fly',t:'C',fp:2,g:'💪 Chest'},
+    {n:'Weighted Pull-up',t:'S',fp:8,g:'🦾 Back'},{n:'Deadlift',t:'S',fp:8,g:'🦾 Back'},{n:'Barbell Row',t:'A',fp:5,g:'🦾 Back'},{n:'Romanian DL',t:'A',fp:5,g:'🦾 Back'},{n:'Cable Row',t:'B',fp:3,g:'🦾 Back'},{n:'DB Row',t:'B',fp:3,g:'🦾 Back'},{n:'Face Pull',t:'C',fp:2,g:'🦾 Back'},
+    {n:'OHP',t:'A',fp:5,g:'🔝 Shoulders'},{n:'DB/Machine Shoulder Press',t:'B',fp:3,g:'🔝 Shoulders'},{n:'Lateral Raise',t:'C',fp:2,g:'🔝 Shoulders'},
+    {n:'Dip',t:'A',fp:5,g:'🤜 Arms'},{n:'Tricep Extension',t:'C',fp:2,g:'🤜 Arms'},{n:'Tricep Pushdown',t:'C',fp:2,g:'🤜 Arms'},{n:'Curl',t:'C',fp:2,g:'🤜 Arms'},{n:'Hammer Curl',t:'C',fp:2,g:'🤜 Arms'},
+    {n:'Squat',t:'S',fp:8,g:'🦵 Legs'},{n:'Bulgarian Split Squat',t:'A',fp:5,g:'🦵 Legs'},{n:'Leg Extension',t:'A',fp:5,g:'🦵 Legs'},{n:'Leg Press',t:'B',fp:3,g:'🦵 Legs'},{n:'Leg Curl',t:'B',fp:3,g:'🦵 Legs'},{n:'Hip Abduction',t:'C',fp:2,g:'🦵 Legs'},{n:'Hip Adduction',t:'C',fp:2,g:'🦵 Legs'},{n:'Calf Raise',t:'C',fp:2,g:'🦵 Legs'},
+  ]
+};
+
+const SHOP = {
+  food:[
+    {e:'🍺',n:'เบียร์ 1 กระป๋อง',p:150},{e:'🍶',n:'เบียร์ 1 ขวดใหญ่',p:250},
+    {e:'🍟',n:'ของทอด 1 มื้อ',p:120},{e:'🧋',n:'ของหวาน',p:80},
+    {e:'🥤',n:'น้ำอัดลม / ชา',p:60},{e:'🍕',n:'Junk Combo Deal',p:230},
+  ],
+  act:[
+    {e:'🎮',n:'เล่นเกมทั้งวัน',p:350},{e:'😴',n:'Rest Day เพิ่ม 1 วัน',p:200},
+    {e:'🍽️',n:'บุฟเฟ่ต์',p:450},{e:'🎬',n:'ดูหนัง Netflix วัน',p:180},
+  ],
+  big:[
+    {e:'🏋️',n:'อุปกรณ์ fitness (≤1,000฿)',p:1200},{e:'📱',n:'Gadget ≤5,000฿',p:3000},
+    {e:'🍺',n:'Hangout',p:7000},{e:'✈️',n:'Trip / ท่องเที่ยว',p:15000},
+  ]
+};
+
+const ACHIEVEMENTS = [
+  {id:'first',  nm:'First Blood',         ds:'Workout ครั้งแรก',         ic:'⚔️', xp:50,  ok:s=>s.wo>=1},
+  {id:'wk7',    nm:'Week Warrior',        ds:'Streak 7 วันติดกัน',       ic:'🔥', xp:100, ok:s=>s.streak>=7},
+  {id:'wk30',   nm:'Iron Month',          ds:'Streak 30 วันติดกัน',      ic:'💎', xp:500, ok:s=>s.streak>=30},
+  {id:'wo50',   nm:'Halfway Hero',        ds:'Workout ครบ 50 ครั้ง',      ic:'🥈', xp:400, ok:s=>s.wo>=50},
+  {id:'wo100',  nm:'Century',             ds:'Workout ครบ 100 ครั้ง',    ic:'💯', xp:1000,ok:s=>s.wo>=100},
+  {id:'pr1',    nm:'PR Hunter',           ds:'Hit PR ครั้งแรก',          ic:'🏆', xp:150, ok:s=>s.prs>=1},
+  {id:'pr10',   nm:'PR Legend',           ds:'Hit PR 10 ครั้ง',          ic:'👑', xp:500, ok:s=>s.prs>=10},
+  {id:'sober7', nm:'Sober Warrior',       ds:'ไม่ดื่มเบียร์ (free) 7 วัน', ic:'🚫',xp:200, ok:s=>s.soberDays>=7},
+  {id:'clean14',nm:'Clean Streak',        ds:'ไม่กิน Junk (free) 14 วัน', ic:'🥗',xp:300, ok:s=>s.cleanDays>=14},
+  {id:'lv5',    nm:'Silver Rising',       ds:'ถึง Level 5',              ic:'🥈', xp:150, ok:s=>s.lv>=5},
+  {id:'lv10',   nm:'Gold Lifter',         ds:'ถึง Level 10',             ic:'🥇', xp:300, ok:s=>s.lv>=10},
+  {id:'lv20',   nm:'Platinum Athlete',   ds:'ถึง Level 20',             ic:'💎', xp:800, ok:s=>s.lv>=20},
+];
+
+const WQ_POOL = [
+  {id:'wq1',nm:'ออกกำลังกาย 6/6 วัน',     ic:'📅',rw:150,xp:200,tgt:6,  key:'wkWO'},
+  {id:'wq2',nm:'Hit PR อย่างน้อย 1 ครั้ง', ic:'🏆',rw:100,xp:150,tgt:1,  key:'wkPR'},
+  {id:'wq3',nm:'Cardio ≥ 4 วัน',          ic:'🏃',rw:120,xp:100,tgt:4,  key:'wkCardio'},
+  {id:'wq4',nm:'โปรตีน ≥150g อย่างน้อย 5 วัน', ic:'🥩',rw:130,xp:100,tgt:5, key:'wkProt'},
+  {id:'wq5',nm:'นอน ≥7h อย่างน้อย 5 วัน', ic:'😴',rw:110,xp:100,tgt:5,  key:'wkSleep'},
+  {id:'wq6',nm:'ไม่กิน Junk (free) ทั้งสัปดาห์', ic:'🥗',rw:200,xp:150,tgt:7, key:'wkClean'},
+];
+
+const DQ_POOL = [
+  {id:'d1',nm:'โปรตีนถึง 160g',     ic:'🥩',rw:25},
+  {id:'d2',nm:'นอน ≥ 7.5 ชั่วโมง', ic:'😴',rw:20},
+  {id:'d3',nm:'ดื่มน้ำ ≥ 3L',      ic:'💧',rw:15},
+  {id:'d4',nm:'Warm-up ก่อน workout',ic:'🤸',rw:10},
+  {id:'d5',nm:'ทำ Tier S ≥ 4 sets', ic:'💪',rw:20},
+  {id:'d6',nm:'Stretch 10 นาทีหลัง workout',ic:'🧘',rw:10},
+  {id:'d7',nm:'ไม่กิน sugar ทั้งวัน',ic:'🚫',rw:20},
+  {id:'d8',nm:'เดิน ≥ 7,000 steps', ic:'🚶',rw:15},
+];
+
+const LV_EXP = [0,500,1000,1500,2000,2500,3500,4500,5500,6500,7500,9500,11500,13500,15500,17500,21500,25500,29500,33500,37500];
+const RANKS = [
+  {lv:1, nm:'Bronze',  badge:'🥉 BRONZE', cls:'rank-bronze'},
+  {lv:6, nm:'Silver',  badge:'🥈 SILVER', cls:'rank-silver'},
+  {lv:11,nm:'Gold',    badge:'🥇 GOLD',   cls:'rank-gold'},
+  {lv:16,nm:'Platinum',badge:'💎 PLATINUM',cls:'rank-plat'},
+  {lv:21,nm:'Elite',   badge:'👑 ELITE',  cls:'rank-elite'},
+];
+const TITLES = ['Iron Rookie','Iron Rookie','Determined','Consistent','Dedicated','Silver Warrior','Disciplined','Focused','Committed','Relentless','Gold Lifter','Volume King','PR Hunter','Progressive','Iron Will','Platinum Fighter','Elite Mode','Unstoppable','Legend','Mythic','THE IRON QUEST'];
+const WD_NAMES = ['จ','อ','พ','พฤ','ศ','ส','อา'];
+
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+
+function defState() {
+  return {
+    fp:0, exp:0, lv:1,
+    streak:0, lastWO:null,
+    wo:0, totalFP:0, prs:0, penalties:0,
+    soberDays:0, cleanDays:0,
+    wkStart:null, wkWO:0, wkPR:0, wkCardio:0, wkProt:0, wkSleep:0, wkClean:0,
+    wkLog:[], wkQId:null, wkQDone:false,
+    dqDate:null, dqIds:[], dqDone:[],
+    lastHabit:null,
+    ach:[],
+    purchases:[],
+    log:[]
+  };
+}
+
+let S = defState();
+let currentUser = null, currentPIN = null;
+let _saveTimer = null;
+
+function save() {
+  if (!currentUser || !currentPIN) return;
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    fetch('/api/save', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username: currentUser, pin: currentPIN, data: S })
+    }).catch(e => console.warn('Auto-save failed:', e));
+  }, 800);
+}
+
+// ════════════════════════════════════════════════
+//  WORKOUT
+// ════════════════════════════════════════════════
+
+let curDay = 'push';
+let setCounts = {};
+
+function selDay(d) {
+  curDay = d;
+  ['push','pull','leg','custom'].forEach(x => document.getElementById('btn'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', x===d));
+  const lbl = {push:'PUSH DAY ☀️', pull:'PULL DAY 🌙', leg:'LEG DAY 🦵', custom:'MIX DAY ⚡ — เลือกได้ทุกท่า'};
+  document.getElementById('woDayLbl').textContent = lbl[d];
+  renderExList();
+}
+
+function exItemHTML(e) {
+  const key = e.n.replace(/\s/g,'_');
+  return `<div class="ex-item">
+    <div class="tier-badge t${e.t}">${e.t}</div>
+    <div style="flex:1;min-width:0">
+      <div class="ex-name">${e.n}</div>
+      <div class="ex-fp">${e.fp} FP / set</div>
+    </div>
+    <div class="sets-ctrl">
+      <button class="sets-btn" onclick="chgSet('${e.n}',-1)">−</button>
+      <span class="sets-n" id="sc_${key}">0</span>
+      <button class="sets-btn" onclick="chgSet('${e.n}',1)">+</button>
+    </div>
+  </div>`;
+}
+
+function renderExList() {
+  const exs = EXDB[curDay];
+  setCounts = {};
+  exs.forEach(e => setCounts[e.n] = 0);
+
+  if (curDay === 'custom') {
+    const groups = {};
+    exs.forEach(e => { if(!groups[e.g]) groups[e.g]=[]; groups[e.g].push(e); });
+    let html = '';
+    for (const [g, gexs] of Object.entries(groups)) {
+      html += `<div style="font-size:11px;font-weight:800;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;padding:10px 2px 6px">${g}</div>`;
+      html += gexs.map(e => exItemHTML(e)).join('');
+    }
+    document.getElementById('exList').innerHTML = html;
+  } else {
+    document.getElementById('exList').innerHTML = exs.map(e => exItemHTML(e)).join('');
+  }
+  calcPreview();
+}
+
+function chgSet(n, d) {
+  setCounts[n] = Math.max(0, (setCounts[n]||0) + d);
+  const el = document.getElementById('sc_'+n.replace(/\s/g,'_'));
+  if(el) el.textContent = setCounts[n];
+  calcPreview();
+}
+
+function calcFP() {
+  const exs = EXDB[curDay];
+  let base = 0, tierSCount = 0;
+  exs.forEach(e => {
+    const s = setCounts[e.n]||0;
+    base += e.fp * s;
+    if(e.t==='S') tierSCount += s;
+  });
+  const mult = parseFloat(document.getElementById('volSel').value);
+  const comp = mult >= 1.0 ? 30 : 0;
+  const po   = document.getElementById('bPO').checked ? 25 : 0;
+  const por  = document.getElementById('bPOR').checked ? 10 : 0;
+  const pr   = document.getElementById('bPR').checked  ? 25 : 0;
+  const card = document.getElementById('bCardio').checked ? 15 : 0;
+  const tsB  = tierSCount >= 3 ? 10 : 0;
+  const baseM = Math.round(base * mult);
+  return { base:baseM, comp, po, por, pr, card, tsB, total:baseM+comp+po+por+pr+card+tsB, tierSCount };
+}
+
+function calcPreview() {
+  const c = calcFP();
+  document.getElementById('fpPrevN').textContent = c.total + ' FP';
+  const parts = ['Base: '+c.base];
+  if(c.comp) parts.push('Completion: +'+c.comp);
+  if(c.po)   parts.push('Overload: +'+c.po);
+  if(c.por)  parts.push('Rep UP: +'+c.por);
+  if(c.pr)   parts.push('PR: +'+c.pr);
+  if(c.card) parts.push('Cardio: +'+c.card);
+  if(c.tsB)  parts.push('Compound: +'+c.tsB);
+  document.getElementById('fpPrevB').textContent = c.total === 0 ? 'เพิ่ม sets เพื่อเริ่มนับ' : parts.join(' | ');
+}
+
+function logWorkout() {
+  const c = calcFP();
+  if(c.base === 0) { toast('เพิ่ม sets ก่อนนะ! 💪','red'); return; }
+  const today = td();
+  if(S.lastWO === today) { toast('บันทึก workout วันนี้แล้ว!','red'); return; }
+
+  const fpG = c.total;
+  const xpG = 100 + (c.pr ? 150 : 0);
+
+  S.fp += fpG; S.totalFP += fpG;
+  addExp(xpG);
+  S.wo++;
+  if(c.pr) S.prs++;
+  if(c.card) { weekCheck(); S.wkCardio++; }
+
+  // streak
+  const yest = yd();
+  if(S.lastWO === yest) S.streak++;
+  else if(S.lastWO !== today) S.streak = 1;
+  S.lastWO = today;
+
+  weekCheck();
+  S.wkWO++;
+  S.wkPR += c.pr ? 1 : 0;
+  if(!S.wkLog.includes(today)) S.wkLog.push(today);
+
+  // streak milestone bonuses
+  let sBonus = 0;
+  if(S.streak === 7)  { sBonus = 50;  toast('🔥 7-Day Streak! +50 FP','gold'); }
+  if(S.streak === 14) { sBonus = 100; toast('🔥 14-Day Streak! +100 FP','gold'); }
+  if(S.streak === 30) { sBonus = 300; addExp(500); toast('🔥 30-Day Streak LEGEND!','purple'); }
+  if(sBonus) { S.fp += sBonus; S.totalFP += sBonus; }
+
+  const dayLabel = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'MIX'}[curDay];
+  addLog(`💪 ${dayLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
+  checkAch(); checkWQ();
+  save(); updateUI();
+
+  // modal
+  showModal(`
+    <div class="m-em">⚔️</div>
+    <div class="m-ttl">${dayLabel} Day Complete!</div>
+    <div class="m-sub">FP ที่ได้รับทั้งหมด</div>
+    <div class="m-fp">+${fpG} FP</div>
+    <div style="text-align:left;margin-bottom:16px">
+      <div class="ir"><span class="lbl">Base sets</span><span class="val" style="color:var(--gold)">+${c.base}</span></div>
+      ${c.comp ? `<div class="ir"><span class="lbl">Completion Bonus</span><span class="val" style="color:var(--gold)">+${c.comp}</span></div>` : ''}
+      ${c.po   ? `<div class="ir"><span class="lbl">Progressive Overload</span><span class="val" style="color:var(--gold)">+${c.po}</span></div>` : ''}
+      ${c.por  ? `<div class="ir"><span class="lbl">Rep Overload</span><span class="val" style="color:var(--gold)">+${c.por}</span></div>` : ''}
+      ${c.pr   ? `<div class="ir"><span class="lbl">PR Bonus 🏆</span><span class="val" style="color:var(--gold)">+${c.pr}</span></div>` : ''}
+      ${c.card ? `<div class="ir"><span class="lbl">Cardio Bonus 🏃</span><span class="val" style="color:var(--gold)">+${c.card}</span></div>` : ''}
+      ${c.tsB  ? `<div class="ir"><span class="lbl">Compound Bonus</span><span class="val" style="color:var(--gold)">+${c.tsB}</span></div>` : ''}
+      ${sBonus ? `<div class="ir"><span class="lbl">Streak Bonus 🔥</span><span class="val" style="color:var(--orange)">+${sBonus}</span></div>` : ''}
+      <div class="ir"><span class="lbl">EXP Gained</span><span class="val" style="color:var(--purple-light)">+${xpG}</span></div>
+    </div>
+    <button class="btn btn-gold" onclick="closeModal()">Accept! ⚔️</button>
+  `);
+}
+
+// ════════════════════════════════════════════════
+//  HABITS
+// ════════════════════════════════════════════════
+
+function liveHabit() {
+  const p = parseFloat(document.getElementById('inProt').value)||0;
+  const sl= parseFloat(document.getElementById('inSleep').value)||0;
+  const w = parseFloat(document.getElementById('inWater').value)||0;
+  const cl= document.getElementById('inClean').checked;
+  document.getElementById('stProt').textContent  = p>=150?'✅':p>=100?'🟡':'⬜';
+  document.getElementById('stSleep').textContent = sl>=7?'✅':sl>=6?'🟡':'⬜';
+  document.getElementById('stWater').textContent = w>=2.5?'✅':w>=2?'🟡':'⬜';
+  document.getElementById('stClean').textContent = cl?'✅':'⬜';
+  const fp = (p>=150?15:0)+(sl>=7?10:0)+(w>=2.5?5:0)+(cl?20:0);
+  document.getElementById('habitFPPreview').textContent = '+'+fp+' FP';
+}
+
+function saveHabits() {
+  const today = td();
+  if(S.lastHabit === today) { toast('บันทึก habits วันนี้แล้ว!','red'); return; }
+  const p  = parseFloat(document.getElementById('inProt').value)||0;
+  const sl = parseFloat(document.getElementById('inSleep').value)||0;
+  const w  = parseFloat(document.getElementById('inWater').value)||0;
+  const cl = document.getElementById('inClean').checked;
+  let fp=0;
+  if(p>=150)  { fp+=15; }
+  if(sl>=7)   { fp+=10; }
+  if(w>=2.5)  { fp+=5; }
+  if(cl)      { fp+=20; S.soberDays++; S.cleanDays++; }
+
+  weekCheck();
+  if(p>=150)  S.wkProt++;
+  if(sl>=7)   S.wkSleep++;
+  if(cl)      S.wkClean++;
+
+  S.fp += fp; S.totalFP += fp;
+  S.lastHabit = today;
+  if(fp>0) addLog(`📋 Daily Habits — +${fp} FP`);
+  checkAch(); checkWQ();
+  save(); updateUI();
+  toast(fp>0 ? `✅ Habits saved! +${fp} FP` : '✅ Habits saved (0 FP)','green');
+}
+
+// ════════════════════════════════════════════════
+//  PENALTY
+// ════════════════════════════════════════════════
+
+function penalty(type, amt) {
+  const lbl = {skip:'Skip Workout',junk:'กิน Junk Food (ไม่แลก)',beer:'ดื่มเบียร์ (ไม่แลก)',sleep:'นอนน้อยกว่า 6h',quit:'เลิก Workout กลางคัน'};
+  if(!confirm(`ยืนยัน: ${lbl[type]}\n−${amt} FP\n\nระบบ honor-based — สารภาพตรงๆ นะ!`)) return;
+  S.fp = Math.max(0, S.fp - amt);
+  S.penalties++;
+  if(type === 'skip') S.streak = 0;
+  addLog(`⚠️ Penalty: ${lbl[type]} — −${amt} FP`);
+  save(); updateUI();
+  toast(`−${amt} FP 😤 ${lbl[type]}`,'red');
+}
+
+// ════════════════════════════════════════════════
+//  SHOP
+// ════════════════════════════════════════════════
+
+function renderShop() {
+  document.getElementById('shopFP').textContent = S.fp.toLocaleString() + ' FP';
+  ['food','act','big'].forEach(cat => {
+    const arr = SHOP[cat];
+    const id = 'shop'+cat[0].toUpperCase()+cat.slice(1);
+    document.getElementById(id).innerHTML = arr.map((item,i) => `
+      <div class="shop-item ${S.fp>=item.p?'ok':'no'}" onclick="${S.fp>=item.p?`buyItem('${cat}',${i})`:''}">
+        <div class="shop-em">${item.e}</div>
+        <div class="shop-nm">${item.n}</div>
+        <div class="shop-pr">${item.p.toLocaleString()} FP</div>
+      </div>`).join('');
+  });
+  const hist = S.purchases||[];
+  document.getElementById('shopHist').innerHTML = hist.length
+    ? hist.slice(0,6).map(p=>`<div class="ir"><span class="lbl">${p.date} ${p.e} ${p.n}</span><span class="val" style="color:var(--red)">−${p.p}</span></div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:13px">ยังไม่มีการแลก</div>';
+}
+
+function buyItem(cat, i) {
+  const item = SHOP[cat][i];
+  if(S.fp < item.p) { toast('FP ไม่พอ! 😤','red'); return; }
+  if(!confirm(`แลก: ${item.e} ${item.n}\n−${item.p.toLocaleString()} FP\n\nยืนยัน?`)) return;
+  S.fp -= item.p;
+  S.purchases = S.purchases||[];
+  S.purchases.unshift({e:item.e,n:item.n,p:item.p,date:td()});
+  if(S.purchases.length>30) S.purchases.pop();
+  addLog(`🛍️ Redeemed: ${item.e} ${item.n} — −${item.p} FP`);
+  save(); renderShop(); updateHomeUI();
+  toast(`${item.e} Enjoy! −${item.p} FP`,'gold');
+}
+
+// ════════════════════════════════════════════════
+//  QUESTS
+// ════════════════════════════════════════════════
+
+function genDQ() {
+  const today = td();
+  if(S.dqDate !== today) {
+    const shuf = [...DQ_POOL].sort(()=>Math.random()-.5);
+    S.dqIds = [shuf[0].id, shuf[1].id];
+    S.dqDone = [];
+    S.dqDate = today;
+    save();
+  }
+}
+
+function renderDQ() {
+  genDQ();
+  const qs = DQ_POOL.filter(q => S.dqIds.includes(q.id));
+  document.getElementById('dqTag').textContent = (S.dqDone||[]).length+'/2';
+  document.getElementById('dqList').innerHTML = qs.map(q => {
+    const done = (S.dqDone||[]).includes(q.id);
+    return `<div class="quest-card ${done?'done':''}">
+      <div class="quest-ic">${q.ic}</div>
+      <div class="quest-info">
+        <div class="quest-nm">${q.nm}</div>
+        <div class="quest-rw">+${q.rw} FP</div>
+      </div>
+      <button class="quest-btn" onclick="claimDQ('${q.id}',${q.rw})" ${done?'disabled':''}>
+        ${done?'✅':'Done!'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function claimDQ(id, rw) {
+  if(!S.dqDone) S.dqDone=[];
+  if(S.dqDone.includes(id)) return;
+  S.dqDone.push(id);
+  S.fp += rw; S.totalFP += rw;
+  addLog(`⚡ Daily Quest — +${rw} FP`);
+  save(); renderDQ(); updateHomeUI();
+  toast(`⚡ Quest done! +${rw} FP`,'gold');
+}
+
+function genWQ() {
+  weekCheck();
+  if(!S.wkQId) {
+    S.wkQId = WQ_POOL[Math.floor(Math.random()*WQ_POOL.length)].id;
+    S.wkQDone = false;
+    save();
+  }
+}
+
+function renderWQ() {
+  genWQ();
+  const q = WQ_POOL.find(x=>x.id===S.wkQId);
+  if(!q) return;
+  const prog = S[q.key]||0;
+  const pct  = Math.min(100,(prog/q.tgt)*100);
+  document.getElementById('wqDisplay').innerHTML = `
+    <div class="quest-card ${S.wkQDone?'done':''}">
+      <div class="quest-ic">${q.ic}</div>
+      <div class="quest-info" style="flex:1">
+        <div class="quest-nm">${q.nm}</div>
+        <div class="quest-rw">+${q.rw} FP | +${q.xp} EXP</div>
+        <div style="margin-top:6px">
+          <div class="pg-bar" style="height:6px"><div class="pg-fill gn" style="width:${pct}%"></div></div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px">${prog} / ${q.tgt}</div>
+        </div>
+      </div>
+      ${prog>=q.tgt && !S.wkQDone
+        ? `<button class="quest-btn" onclick="claimWQ()">Claim!</button>`
+        : S.wkQDone ? '<span style="color:var(--green);font-size:20px">✅</span>' : ''}
+    </div>`;
+}
+
+function claimWQ() {
+  const q = WQ_POOL.find(x=>x.id===S.wkQId);
+  if(!q||S.wkQDone) return;
+  S.wkQDone = true;
+  S.fp += q.rw; S.totalFP += q.rw;
+  addExp(q.xp);
+  addLog(`📜 Weekly Quest: "${q.nm}" — +${q.rw} FP +${q.xp} EXP`);
+  save(); updateUI();
+  toast(`📜 Weekly Quest done! +${q.rw} FP`,'purple');
+}
+
+function checkWQ() { renderWQ(); }
+
+// ════════════════════════════════════════════════
+//  LEVEL & EXP
+// ════════════════════════════════════════════════
+
+function addExp(amt) {
+  S.exp += amt;
+  const nl = calcLv(S.exp);
+  if(nl > S.lv) { S.lv = nl; addLog(`🎉 Level Up → Level ${nl}!`); toast(`🎉 LEVEL UP! → Lv.${nl}`,'purple'); }
+}
+
+function calcLv(exp) {
+  let lv=1;
+  for(let i=1;i<LV_EXP.length;i++) { if(exp>=LV_EXP[i]) lv=i+1; else break; }
+  return Math.min(lv,21);
+}
+
+function getLvExp(lv) { return LV_EXP[Math.min(lv-1, LV_EXP.length-1)]; }
+function getNxtExp(lv) { return LV_EXP[Math.min(lv, LV_EXP.length-1)] || LV_EXP[LV_EXP.length-1]+8000; }
+
+function getRank(lv) {
+  let r = RANKS[0];
+  for(const x of RANKS) { if(lv>=x.lv) r=x; }
+  return r;
+}
+
+// ════════════════════════════════════════════════
+//  ACHIEVEMENTS
+// ════════════════════════════════════════════════
+
+function checkAch() {
+  if(!S.ach) S.ach=[];
+  ACHIEVEMENTS.forEach(a => {
+    if(!S.ach.includes(a.id) && a.ok(S)) {
+      S.ach.push(a.id);
+      addExp(a.xp);
+      addLog(`🏆 Achievement: "${a.nm}" — +${a.xp} EXP`);
+      toast(`🏆 ${a.nm}! +${a.xp} EXP`,'purple');
+    }
+  });
+}
+
+function renderAch() {
+  document.getElementById('achCount').textContent = (S.ach||[]).length;
+  document.getElementById('achTotal').textContent = ACHIEVEMENTS.length;
+  document.getElementById('achList').innerHTML = ACHIEVEMENTS.map(a => {
+    const ul = (S.ach||[]).includes(a.id);
+    return `<div class="ach-item ${ul?'ul':'lk'}">
+      <div class="ach-ic">${a.ic}</div>
+      <div class="ach-info">
+        <div class="ach-nm">${a.nm} ${ul?'✅':'🔒'}</div>
+        <div class="ach-ds">${a.ds}</div>
+      </div>
+      <div class="ach-xp">+${a.xp} EXP</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+//  CHARACTER STATS
+// ════════════════════════════════════════════════
+
+function renderCharStats() {
+  const str  = Math.min(100, S.prs*10);
+  const vol  = Math.min(100, (S.wo/100)*100);
+  const disc = Math.max(10, 100 - S.penalties*4);
+  const rec  = Math.min(100, S.wkSleep*20);
+  const nut  = Math.min(100, S.wkProt*20);
+  const stats = [
+    {nm:'💪 Strength',  v:str,  color:'#ff6b35'},
+    {nm:'📦 Volume',    v:vol,  color:COLORS.purple},
+    {nm:'🧘 Discipline',v:disc, color:COLORS.green},
+    {nm:'😴 Recovery',  v:rec,  color:COLORS.blue},
+    {nm:'🥩 Nutrition', v:nut,  color:COLORS.gold},
+  ];
+  document.getElementById('charStats').innerHTML = stats.map(s=>`
+    <div class="cs-row">
+      <div class="cs-label"><span>${s.nm}</span><span style="font-weight:800">${Math.round(s.v)}</span></div>
+      <div class="cs-bar"><div class="cs-fill" style="width:${s.v}%;background:${s.color}"></div></div>
+    </div>`).join('');
+}
+
+const COLORS = {gold:'#ffd700',purple:'#7c3aed',green:'#22c55e',red:'#ef4444',blue:'#3b82f6'};
+
+// ════════════════════════════════════════════════
+//  ACTIVITY LOG
+// ════════════════════════════════════════════════
+
+function addLog(msg) {
+  if(!S.log) S.log=[];
+  S.log.unshift({msg, date:td(), time:new Date().toLocaleTimeString('th',{hour:'2-digit',minute:'2-digit'})});
+  if(S.log.length>60) S.log.pop();
+}
+
+function renderLog() {
+  const log = S.log||[];
+  document.getElementById('actLog').innerHTML = log.length
+    ? log.slice(0,25).map(e=>`
+        <div class="log-entry">
+          <div class="log-msg">${e.msg}</div>
+          <div class="log-time">${e.date} ${e.time}</div>
+        </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:13px">ยังไม่มีกิจกรรม</div>';
+}
+
+// ════════════════════════════════════════════════
+//  WEEK
+// ════════════════════════════════════════════════
+
+function weekStart() {
+  const d = new Date(), day = d.getDay();
+  const diff = d.getDate() - day + (day===0?-6:1);
+  return new Date(new Date().setDate(diff)).toISOString().split('T')[0];
+}
+
+function weekCheck() {
+  const ws = weekStart();
+  if(S.wkStart !== ws) {
+    S.wkStart=ws; S.wkWO=0; S.wkPR=0; S.wkCardio=0;
+    S.wkProt=0; S.wkSleep=0; S.wkClean=0; S.wkLog=[];
+    S.wkQId=null; S.wkQDone=false;
+  }
+}
+
+function renderWkDays() {
+  const done = S.wkLog||[];
+  const today = td();
+  let html='';
+  for(let i=0;i<7;i++){
+    const d = new Date();
+    const dow = d.getDay();
+    const diff = i - (dow===0?6:dow-1);
+    const dd = new Date(); dd.setDate(dd.getDate()+diff);
+    const ds = dd.toISOString().split('T')[0];
+    const isToday = diff===0;
+    const isDone  = done.includes(ds);
+    html += `<div class="wk-d ${isDone?'done':isToday?'today':''}">
+      ${isDone ? '✓' : `<span class="wk-d-lbl">${WD_NAMES[i]}</span>`}
+    </div>`;
+  }
+  document.getElementById('wkDays').innerHTML = html;
+}
+
+// ════════════════════════════════════════════════
+//  HOME UI
+// ════════════════════════════════════════════════
+
+function updateHomeUI() {
+  const lv   = S.lv;
+  const rank = getRank(lv);
+  const ttl  = TITLES[Math.min(lv, TITLES.length-1)];
+  const expC = getLvExp(lv);
+  const expN = getNxtExp(lv);
+  const expP = Math.min(100, ((S.exp-expC)/(expN-expC))*100);
+
+  document.getElementById('rankBadge').className = 'rank-badge '+rank.cls;
+  document.getElementById('rankBadge').textContent = rank.badge;
+  document.getElementById('heroLv').textContent   = `Level ${lv} — ${ttl}`;
+  document.getElementById('heroTtl').textContent  = getTitle(lv);
+  document.getElementById('fpDisp').textContent   = S.fp.toLocaleString() + ' FP';
+  document.getElementById('dskFP').textContent    = '⚡ ' + S.fp.toLocaleString() + ' FP';
+  document.getElementById('dskRank').textContent  = rank.badge + '  Lv.' + lv;
+  document.getElementById('dskRank').className    = 'rank-badge ' + rank.cls;
+  document.getElementById('expDisp').textContent  = `${S.exp.toLocaleString()} / ${expN.toLocaleString()}`;
+  document.getElementById('expBar').style.width   = expP+'%';
+
+  document.getElementById('streakN').textContent  = S.streak;
+  document.getElementById('weekCount').textContent = (S.wkWO||0)+'/6';
+  if(S.streak===0) document.getElementById('streakSub').textContent='เริ่ม streak วันนี้!';
+  else if(S.streak<7) document.getElementById('streakSub').textContent=`อีก ${7-S.streak} วันได้ Streak bonus!`;
+  else document.getElementById('streakSub').textContent=`🔥 ${S.streak} วันแล้ว!`;
+
+  document.getElementById('stFP').textContent = S.totalFP.toLocaleString();
+  document.getElementById('stWO').textContent = S.wo;
+  document.getElementById('stPR').textContent = S.prs;
+  document.getElementById('stPN').textContent = S.penalties;
+
+  renderWkDays();
+  renderDQ();
+  renderWQ();
+}
+
+function getTitle(lv) {
+  const t = [
+    '"The journey begins..."','"Every rep counts."','"Building the habit."','"Consistency is key."',
+    '"Almost Silver rank..."','"Rising warrior!"','"No days off."','"Iron mind, iron body."',
+    '"The grind never stops."','"Almost Gold rank..."','"Gold tier achieved!"','"Volume is king."',
+    '"PR or die trying."','"Progressive overload forever."','"Iron Will activated."',
+    '"Platinum: earned not given."','"Elite mode: ON."','"Nothing can stop me."',
+    '"Legend in the making."','"Mythic status."','"I AM IRON QUEST."'
+  ];
+  return t[Math.min(lv, t.length-1)];
+}
+
+// ════════════════════════════════════════════════
+//  FULL UI UPDATE
+// ════════════════════════════════════════════════
+
+function updateUI() {
+  updateHomeUI();
+  renderShop();
+  renderAch();
+  renderCharStats();
+  renderLog();
+}
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  document.getElementById('app-content').scrollTop = 0;
+  if(p==='shop')    renderShop();
+  if(p==='workout') { renderExList(); calcPreview(); }
+  if(p==='profile') { renderAch(); renderCharStats(); renderLog(); }
+  if(p==='rank')    renderRank();
+}
+
+// ════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════
+
+let tTimer;
+function toast(msg, type='gold') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(tTimer);
+  tTimer = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════════════
+
+function showModal(html) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('mOverlay').classList.add('show');
+}
+function closeModal() { document.getElementById('mOverlay').classList.remove('show'); }
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+
+function td() { return new Date().toISOString().split('T')[0]; }
+function yd() { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; }
+
+function resetGame() {
+  if(!confirm('⚠️ Reset ข้อมูลทั้งหมด?\n(ล็อกอินยังอยู่ แค่ข้อมูลเกม reset)\nไม่สามารถย้อนกลับได้!')) return;
+  S = defState();
+  save(); updateUI();
+  toast('🗑️ Reset เรียบร้อย','red');
+}
+
+// ════════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════════
+
+async function renderRank() {
+  document.getElementById('rankPodium').innerHTML =
+    '<div style="color:var(--text-dim);text-align:center;padding:20px">กำลังโหลด...</div>';
+  document.getElementById('rankList').innerHTML = '';
+
+  try {
+    const r = await fetch('/api/users');
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.msg);
+
+    // เรียงตาม Level desc → totalFP desc
+    const sorted = (d.users || [])
+      .sort((a, b) => b.lv - a.lv || b.totalFP - a.totalFP);
+
+    if (!sorted.length) {
+      document.getElementById('rankPodium').innerHTML =
+        '<div style="color:var(--text-dim);text-align:center;padding:20px">ยังไม่มีผู้เล่น</div>';
+      return;
+    }
+
+    _renderPodium(sorted);
+    _renderRankList(sorted);
+  } catch(e) {
+    document.getElementById('rankPodium').innerHTML =
+      '<div style="color:var(--red);text-align:center;padding:20px">โหลดข้อมูลไม่ได้ 😢<br><small>ตรวจสอบว่า server รันอยู่</small></div>';
+  }
+}
+
+function _renderPodium(sorted) {
+  const medals = ['🥇','🥈','🥉'];
+  const medalColors = [
+    'rgba(255,215,0,.18)',    // gold
+    'rgba(192,192,192,.12)',  // silver
+    'rgba(205,127,50,.12)',   // bronze
+  ];
+  const borderColors = [
+    'rgba(255,215,0,.5)',
+    'rgba(192,192,192,.3)',
+    'rgba(205,127,50,.3)',
+  ];
+  // แสดงลำดับ: 2nd (ซ้าย) → 1st (กลาง) → 3rd (ขวา)
+  const order = sorted.length >= 3 ? [1,0,2]
+              : sorted.length === 2 ? [1,0]
+              : [0];
+  const podiumH = ['64px','96px','48px']; // ความสูง podium แต่ละตำแหน่ง
+
+  let html = '<div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:8px 0 0">';
+  order.forEach((rankIdx, visualIdx) => {
+    const u = sorted[rankIdx];
+    if (!u) return;
+    const isMe  = u.username === currentUser;
+    const rnk   = getRank(u.lv);
+    html += `
+      <div style="flex:1;max-width:110px;text-align:center">
+        <div style="font-size:12px;margin-bottom:3px;color:var(--text-dim)">${medals[rankIdx]}</div>
+        <div style="font-size:34px;line-height:1.15">${u.avatar}</div>
+        <div style="font-size:12px;font-weight:800;margin:3px 0 2px;${isMe?'color:var(--gold)':''}overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          ${u.username}${isMe?' 👈':''}
+        </div>
+        <div><span class="rank-badge ${rnk.cls}" style="font-size:9px;padding:1px 7px">Lv.${u.lv}</span></div>
+        <div style="font-size:10px;color:var(--gold-dim);margin:3px 0 6px">${(u.totalFP||0).toLocaleString()} FP</div>
+        <div style="height:${podiumH[visualIdx]};
+             background:${medalColors[rankIdx]};
+             border-radius:6px 6px 0 0;
+             border-top:2px solid ${borderColors[rankIdx]};
+             border-left:1px solid ${borderColors[rankIdx]};
+             border-right:1px solid ${borderColors[rankIdx]}">
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  document.getElementById('rankPodium').innerHTML = html;
+}
+
+function _renderRankList(sorted) {
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('rankList').innerHTML = sorted.map((u, i) => {
+    const isMe = u.username === currentUser;
+    const rnk  = getRank(u.lv);
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px ${isMe?'8':'0'}px;
+           margin:0 ${isMe?'-8':'0'}px;
+           border-bottom:1px solid var(--border);
+           border-radius:${isMe?'8':'0'}px;
+           background:${isMe?'rgba(255,215,0,.05)':'transparent'}">
+        <!-- Rank # -->
+        <div style="width:26px;text-align:center;flex-shrink:0;
+             font-size:${i<3?'18':'12'}px;font-weight:800;color:${i<3?'inherit':'var(--text-dim)'}">
+          ${i<3 ? medals[i] : '#'+(i+1)}
+        </div>
+        <!-- Avatar -->
+        <div style="font-size:26px;flex-shrink:0;line-height:1.2">${u.avatar}</div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;${isMe?'color:var(--gold)':''}">
+            ${u.username}
+            ${isMe?'<span style="font-size:9px;background:rgba(255,215,0,.15);color:var(--gold);padding:1px 6px;border-radius:10px;margin-left:4px">You</span>':''}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:3px;align-items:center;flex-wrap:wrap">
+            <span class="rank-badge ${rnk.cls}" style="font-size:9px;padding:1px 7px">Lv.${u.lv}</span>
+            <span style="font-size:10px;color:var(--text-dim)">🔥 ${u.streak||0} streak</span>
+            <span style="font-size:10px;color:var(--text-dim)">💪 ${u.wo||0} workouts</span>
+          </div>
+        </div>
+        <!-- Score -->
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:900;color:var(--gold)">${(u.totalFP||0).toLocaleString()}</div>
+          <div style="font-size:9px;color:var(--text-dim);letter-spacing:.5px">TOTAL FP</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+//  LOGIN SYSTEM
+// ════════════════════════════════════════════════
+
+const AVATARS = ['🧙','⚔️','🦁','🐉','🔥','💎','🏆','🦅','🌟','👑','🤖','💪'];
+let _pinBuf = '', _pinTarget = '', _pinAvt = '🧙';
+let _createPinBuf = '', _createAvt = '🧙';
+
+function showLoginOverlay() {
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  showPhase(1);
+}
+
+function hideLoginOverlay() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+  const avt = sessionStorage.getItem('iqAvt') || '🧙';
+  const uname = currentUser || '—';
+  // desktop header
+  document.getElementById('dskAvatar').textContent   = avt;
+  document.getElementById('dskUsername').textContent  = uname;
+  // profile page
+  document.getElementById('profileAvatar').textContent   = avt;
+  document.getElementById('profileUsername').textContent  = uname;
+}
+
+async function showPhase(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('loPhase'+i).style.display = (i===n) ? '' : 'none';
+  });
+  if (n === 1) await loadCharGrid();
+  if (n === 3) loadAvatarGrid();
+}
+
+async function loadCharGrid() {
+  const grid = document.getElementById('charGrid');
+  grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;grid-column:1/-1;text-align:center">กำลังโหลด...</div>';
+  try {
+    const r = await fetch('/api/users');
+    const d = await r.json();
+    const users = d.users || [];
+    let html = users.map(u => `
+      <div class="char-card" onclick="selectChar('${u.username}','${u.avatar}')">
+        <div class="char-avatar">${u.avatar}</div>
+        <div class="char-name">${u.username}</div>
+        <div class="char-lv">Lv.${u.lv}</div>
+      </div>`).join('');
+    if (users.length < 5) {
+      html += `<div class="char-card new-btn" onclick="showPhase(3)">
+        <div style="font-size:28px;margin-bottom:4px">+</div>
+        <div style="font-size:11px">สร้างใหม่</div>
+      </div>`;
+    }
+    grid.innerHTML = html || `<div style="color:var(--text-dim);font-size:13px;grid-column:1/-1;text-align:center">ยังไม่มี Character</div>`;
+  } catch(e) {
+    grid.innerHTML = '<div style="color:var(--red);grid-column:1/-1;text-align:center">เชื่อมต่อ server ไม่ได้ 😢<br><small>ตรวจสอบว่า server รันอยู่</small></div>';
+  }
+}
+
+function selectChar(username, avatar) {
+  _pinBuf = ''; _pinTarget = username; _pinAvt = avatar;
+  document.getElementById('pinAvatar').textContent = avatar;
+  document.getElementById('pinName').textContent   = username;
+  document.getElementById('pinErr').textContent    = '';
+  updatePinDots('pinDots', 0);
+  showPhase(2);
+}
+
+function updatePinDots(elId, len) {
+  document.getElementById(elId).querySelectorAll('.pin-dot').forEach((d,i) => {
+    d.classList.toggle('filled', i < len);
+  });
+}
+
+function pinKey(k) {
+  if (k === 'del')      { _pinBuf = _pinBuf.slice(0,-1); }
+  else if (k === 'ok')  { doLogin(); return; }
+  else if (_pinBuf.length < 4) { _pinBuf += k; }
+  updatePinDots('pinDots', _pinBuf.length);
+  if (_pinBuf.length === 4) doLogin();
+}
+
+async function doLogin() {
+  if (_pinBuf.length < 4) return;
+  document.getElementById('pinErr').textContent = '';
+  try {
+    const r = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username: _pinTarget, pin: _pinBuf })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      currentUser = d.username;
+      currentPIN  = _pinBuf;
+      sessionStorage.setItem('iqUser', currentUser);
+      sessionStorage.setItem('iqPIN',  currentPIN);
+      sessionStorage.setItem('iqAvt',  d.avatar || '🧙');
+      S = d.data || defState();
+      hideLoginOverlay();
+      weekCheck(); selDay('push'); updateUI();
+    } else {
+      document.getElementById('pinErr').textContent = d.msg || 'PIN ไม่ถูกต้อง';
+      _pinBuf = ''; updatePinDots('pinDots', 0);
+    }
+  } catch(e) {
+    document.getElementById('pinErr').textContent = 'เชื่อมต่อ server ไม่ได้';
+    _pinBuf = ''; updatePinDots('pinDots', 0);
+  }
+}
+
+function loadAvatarGrid() {
+  _createPinBuf = ''; _createAvt = '🧙';
+  document.getElementById('avatarGrid').innerHTML = AVATARS.map(a => `
+    <div class="avatar-opt ${a==='🧙'?'sel':''}" onclick="selAvatar(this,'${a}')">${a}</div>`).join('');
+  document.getElementById('createErr').textContent  = '';
+  document.getElementById('createName').value       = '';
+  document.getElementById('createOk').style.opacity = '.3';
+  updatePinDots('createDots', 0);
+}
+
+function selAvatar(el, a) {
+  _createAvt = a;
+  document.querySelectorAll('.avatar-opt').forEach(x => x.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function createKey(k) {
+  if (k === 'del')           { _createPinBuf = _createPinBuf.slice(0,-1); }
+  else if (_createPinBuf.length < 4) { _createPinBuf += k; }
+  updatePinDots('createDots', _createPinBuf.length);
+  document.getElementById('createOk').style.opacity = _createPinBuf.length === 4 ? '1' : '.3';
+}
+
+async function submitCreate() {
+  const username = document.getElementById('createName').value.trim();
+  const err = document.getElementById('createErr');
+  err.textContent = '';
+  if (!username)              { err.textContent = 'กรุณากรอกชื่อ'; return; }
+  if (_createPinBuf.length < 4) { err.textContent = 'กรุณาตั้ง PIN 4 หลัก'; return; }
+  try {
+    const r = await fetch('/api/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, pin: _createPinBuf, avatar: _createAvt })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      currentUser = username; currentPIN = _createPinBuf;
+      sessionStorage.setItem('iqUser', currentUser);
+      sessionStorage.setItem('iqPIN',  currentPIN);
+      sessionStorage.setItem('iqAvt',  _createAvt);
+      S = defState();
+      hideLoginOverlay();
+      weekCheck(); selDay('push'); updateUI();
+      toast(`⚔️ ยินดีต้อนรับ ${username}!`, 'gold');
+    } else {
+      err.textContent = d.msg || 'เกิดข้อผิดพลาด';
+    }
+  } catch(e) {
+    err.textContent = 'เชื่อมต่อ server ไม่ได้';
+  }
+}
+
+function doLogout() {
+  if (!confirm('ออกจากระบบ / Switch User?')) return;
+  clearTimeout(_saveTimer);
+  sessionStorage.removeItem('iqUser');
+  sessionStorage.removeItem('iqPIN');
+  sessionStorage.removeItem('iqAvt');
+  currentUser = null; currentPIN = null;
+  S = defState();
+  showLoginOverlay();
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+
+const now = new Date();
+document.getElementById('wkDateDisp').textContent    = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long'});
+document.getElementById('dailyDateDisp').textContent = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long'});
+
+(async () => {
+  const su = sessionStorage.getItem('iqUser');
+  const sp = sessionStorage.getItem('iqPIN');
+  if (su && sp) {
+    try {
+      const r = await fetch('/api/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: su, pin: sp })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        currentUser = d.username; currentPIN = sp;
+        sessionStorage.setItem('iqAvt', d.avatar || '🧙');
+        S = d.data || defState();
+        hideLoginOverlay();
+        weekCheck(); selDay('push'); updateUI();
+        return;
+      }
+    } catch(e) {}
+  }
+  showLoginOverlay();
+})();
+</script>
+</body>
+</html>

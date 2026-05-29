@@ -1,0 +1,16 @@
+{
+  "name": "iron-quest",
+  "version": "1.0.0",
+  "description": "Iron Quest Fitness RPG",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
+    "express": "^4.18.2"
+  }
+}
