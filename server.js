@@ -76,7 +76,7 @@ function defState() {
     wkStart:null, wkWO:0, wkPR:0, wkCardio:0, wkProt:0, wkSleep:0, wkClean:0,
     wkLog:[], wkQId:null, wkQDone:false,
     dqDate:null, dqIds:[], dqDone:[],
-    lastHabit:null, ach:[], purchases:[], log:[]
+    lastHabit:null, monthlyFP:0, monthlyReset:null, ach:[], purchases:[], log:[]
   };
 }
 
@@ -112,15 +112,17 @@ app.get('/api/users', async (req, res) => {
       .select('username, avatar, game_data')
       .order('created_at');
     if (error) throw error;
+    const ym = new Date().toISOString().slice(0, 7); // "YYYY-MM"
     res.json({
       ok: true,
       users: data.map(r => ({
-        username: r.username,
-        avatar:   r.avatar,
-        lv:       r.game_data?.lv      || 1,
-        totalFP:  r.game_data?.totalFP || 0,
-        streak:   r.game_data?.streak  || 0,
-        wo:       r.game_data?.wo      || 0,
+        username:  r.username,
+        avatar:    r.avatar,
+        lv:        r.game_data?.lv       || 1,
+        totalFP:   r.game_data?.totalFP  || 0,
+        streak:    r.game_data?.streak   || 0,
+        wo:        r.game_data?.wo       || 0,
+        monthlyFP: (r.game_data?.monthlyReset === ym) ? (r.game_data?.monthlyFP || 0) : 0,
       }))
     });
   } catch(e) { res.status(500).json({ ok: false, msg: e.message }); }
