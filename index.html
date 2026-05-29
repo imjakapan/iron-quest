@@ -509,6 +509,94 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   .shop-grid { grid-template-columns:repeat(4,1fr) !important; }
   .rsp-row { gap:18px; }
 }
+
+/* ══════════════════════════════════════════
+   LOGIN OVERLAY — RESPONSIVE (≥ 768px)
+   ══════════════════════════════════════════ */
+@media (min-width:768px) {
+
+  /* Overlay: พื้นหลัง blur แทนสีทึบ */
+  #loginOverlay {
+    background: rgba(8,8,15,.96);
+    backdrop-filter: blur(6px);
+    padding: 40px 24px;
+  }
+
+  /* Phase containers: แสดงเป็น card กลางจอ */
+  #loPhase1, #loPhase2, #loPhase3 {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px 48px;
+    width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  }
+
+  /* ─── Phase 1: Character Select ─── */
+  #loPhase1 { max-width: 680px; }
+
+  .lo-logo { font-size: 42px; }
+  .lo-sub  { font-size: 14px; margin-bottom: 28px; }
+
+  .char-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 100%;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .char-card  { padding: 22px 12px; border-radius: 16px; }
+  .char-avatar{ font-size: 46px; margin-bottom: 10px; }
+  .char-name  { font-size: 13px; }
+  .char-lv    { font-size: 11px; }
+
+  /* ─── Phase 2: PIN Entry ─── */
+  #loPhase2 {
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pin-wrap   { max-width: 360px; }
+  .pin-user   { font-size: 60px; }
+  .pin-name   { font-size: 22px; margin-bottom: 24px; }
+  .pin-dots   { gap: 14px; margin-bottom: 24px; }
+  .pin-dot    { width: 14px; height: 14px; }
+  .pin-grid   { gap: 12px; }
+  .pin-key    {
+    padding: 20px 8px;
+    font-size: 22px;
+    border-radius: 14px;
+  }
+  .pin-back   { font-size: 13px; margin-top: 22px; }
+
+  /* ─── Phase 3: Create Character ─── */
+  #loPhase3 { max-width: 560px; }
+
+  .create-wrap { max-width: 100%; }
+  .create-wrap label { font-size: 13px; margin: 14px 0 5px; }
+  .create-wrap input[type=text] {
+    font-size: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .avatar-grid { gap: 10px; margin: 10px 0 6px; }
+  .avatar-opt  { width: 52px; height: 52px; font-size: 28px; border-radius: 12px; }
+
+  /* Pin numpad ใน create form ก็ใหญ่ขึ้น */
+  .create-wrap .pin-grid { gap: 10px; margin-bottom: 6px; }
+}
+
+/* ══ LOGIN ≥ 1200px: ขยายอีกนิด ══ */
+@media (min-width:1200px) {
+  #loPhase1 { max-width: 760px; padding: 48px 60px; }
+  #loPhase2 { max-width: 500px; padding: 48px 60px; }
+  #loPhase3 { max-width: 620px; padding: 48px 60px; }
+  .char-grid { grid-template-columns: repeat(5, 1fr); gap: 18px; }
+  .pin-key   { padding: 22px 10px; font-size: 24px; }
+}
 </style>
 </head>
 <body>
