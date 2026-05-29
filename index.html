@@ -149,14 +149,23 @@ body {
 .btn-xs     { padding:6px 10px; font-size:11px; width:auto; }
 
 /* ─── DAY SELECTOR ─── */
-.day-sel { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.day-sel { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
 .day-btn {
-  padding:12px 6px; border-radius:12px; border:1px solid var(--border);
+  padding:10px 4px; border-radius:12px; border:1px solid var(--border);
   background:var(--bg-card2); color:var(--text-dim); cursor:pointer;
-  text-align:center; font-size:13px; font-weight:700; transition:all .2s;
+  text-align:center; font-size:11px; font-weight:700; transition:all .2s;
 }
 .day-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(255,215,0,.06); }
-.day-em { font-size:24px; display:block; margin-bottom:3px; }
+.day-em { font-size:22px; display:block; margin-bottom:3px; }
+
+/* ─── RUN DISTANCE PICKER ─── */
+.run-dist-btn {
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  background:var(--bg-card2); border-radius:10px; margin-bottom:6px;
+  border:1px solid var(--border); cursor:pointer; transition:all .2s;
+}
+.run-dist-btn:active { transform:scale(.97); }
+.run-dist-btn.sel { border-color:var(--green); background:rgba(34,197,94,.08); }
 
 /* ─── EXERCISE ─── */
 .ex-item {
@@ -489,8 +498,9 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   /* Full-width child inside rsp-row */
   .rsp-full { grid-column:1 / -1; }
 
-  /* ─── Day selector: 4 cols on desktop ─── */
-  .day-sel { grid-template-columns:repeat(4,1fr); }
+  /* ─── Day selector: 5 cols on desktop ─── */
+  .day-sel { grid-template-columns:repeat(5,1fr); }
+  .day-btn { font-size:13px; padding:12px 6px; }
 
   /* ─── Shop: 3 cols ─── */
   .shop-grid { grid-template-columns:repeat(3,1fr) !important; }
@@ -810,7 +820,8 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
     <div class="day-btn active" id="btnPush"   onclick="selDay('push')"><span class="day-em">🫸</span>PUSH</div>
     <div class="day-btn"        id="btnPull"   onclick="selDay('pull')"><span class="day-em">🫷</span>PULL</div>
     <div class="day-btn"        id="btnLeg"    onclick="selDay('leg')"><span class="day-em">🦵</span>LEG</div>
-    <div class="day-btn"        id="btnCustom" onclick="selDay('custom')"><span class="day-em">⚡</span>MIX</div>
+    <div class="day-btn"        id="btnCustom" onclick="selDay('custom')"><span class="day-em">🏋️</span>FULL BODY</div>
+    <div class="day-btn"        id="btnRun"    onclick="selDay('run')"><span class="day-em">🏃</span>RUN</div>
   </div>
 
   <!-- ─ Responsive row: Exercise list LEFT | Options RIGHT ─ -->
@@ -825,7 +836,7 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
 
     <div><!-- right col: options + log button -->
       <!-- Volume -->
-      <div class="card">
+      <div class="card" id="woVolCard">
         <div class="card-title">Volume Completion</div>
         <select id="volSel" onchange="calcPreview()">
           <option value="1.0">✅ 100% — ครบทุก set (+30 FP completion bonus)</option>
@@ -835,7 +846,7 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
         </select>
       </div>
       <!-- Bonuses -->
-      <div class="card">
+      <div class="card" id="woBonusCard">
         <div class="card-title">Bonus</div>
         <div class="bonus-row"><label><input type="checkbox" id="bPO" onchange="calcPreview()"><span class="bonus-row-txt">Progressive Overload — เพิ่ม weight</span><span class="tag tag-gold">+25 FP</span></label></div>
         <div class="bonus-row"><label><input type="checkbox" id="bPOR" onchange="calcPreview()"><span class="bonus-row-txt">Overload — weight เดิม เพิ่ม reps</span><span class="tag tag-gold">+10 FP</span></label></div>
@@ -848,7 +859,7 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
         <div class="fp-prev-n" id="fpPrevN">0 FP</div>
         <div class="fp-prev-b" id="fpPrevB">เพิ่ม sets เพื่อเริ่มนับ</div>
       </div>
-      <button class="btn btn-gold" onclick="logWorkout()">⚔️ LOG WORKOUT — Earn FP!</button>
+      <button class="btn btn-gold" id="logWoBtn" onclick="logWorkout()">⚔️ LOG WORKOUT — Earn FP!</button>
     </div><!-- /right col -->
 
   </div><!-- /rsp-row -->
@@ -1082,6 +1093,16 @@ const EXDB = {
   ]
 };
 
+const RUN_DISTANCES = [
+  {km:3,  fp:10,  label:'3 km'},
+  {km:5,  fp:20,  label:'5 km'},
+  {km:7,  fp:30,  label:'7 km'},
+  {km:10, fp:50,  label:'10 km'},
+  {km:15, fp:80,  label:'15 km'},
+  {km:21, fp:130, label:'21 km — Half Marathon 🥇'},
+  {km:42, fp:250, label:'42 km — Full Marathon 🏅'},
+];
+
 const SHOP = {
   food:[
     {e:'🍺',n:'เบียร์ 1 กระป๋อง',p:150},{e:'🍶',n:'เบียร์ 1 ขวดใหญ่',p:250},
@@ -1190,12 +1211,24 @@ function save() {
 
 let curDay = 'push';
 let setCounts = {};
+let selectedRunKm = 0;
 
 function selDay(d) {
   curDay = d;
-  ['push','pull','leg','custom'].forEach(x => document.getElementById('btn'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', x===d));
-  const lbl = {push:'PUSH DAY ☀️', pull:'PULL DAY 🌙', leg:'LEG DAY 🦵', custom:'MIX DAY ⚡ — เลือกได้ทุกท่า'};
+  ['push','pull','leg','custom','run'].forEach(x => document.getElementById('btn'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active', x===d));
+  const lbl = {
+    push:   'PUSH DAY ☀️',
+    pull:   'PULL DAY 🌙',
+    leg:    'LEG DAY 🦵',
+    custom: 'FULL BODY DAY 🏋️ — เลือกได้ทุกท่า',
+    run:    'RUNNING 🏃 — เลือกระยะทาง'
+  };
   document.getElementById('woDayLbl').textContent = lbl[d];
+  // ซ่อน/แสดง Volume+Bonus (ไม่ใช้กับ Running)
+  const isGym = d !== 'run';
+  document.getElementById('woVolCard').style.display   = isGym ? '' : 'none';
+  document.getElementById('woBonusCard').style.display = isGym ? '' : 'none';
+  document.getElementById('logWoBtn').textContent = d === 'run' ? '🏃 LOG RUN — Earn FP!' : '⚔️ LOG WORKOUT — Earn FP!';
   renderExList();
 }
 
@@ -1215,7 +1248,29 @@ function exItemHTML(e) {
   </div>`;
 }
 
+function renderRunUI() {
+  selectedRunKm = 0;
+  document.getElementById('exList').innerHTML = RUN_DISTANCES.map(d => `
+    <div class="run-dist-btn" id="rdist_${d.km}" onclick="selRunDist(${d.km})">
+      <span style="font-size:22px;flex-shrink:0">🏃</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700">${d.label}</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:var(--gold)">+${d.fp} FP</div>
+    </div>`).join('');
+  calcPreview();
+}
+
+function selRunDist(km) {
+  selectedRunKm = km;
+  document.querySelectorAll('.run-dist-btn').forEach(b => b.classList.remove('sel'));
+  const el = document.getElementById('rdist_'+km);
+  if(el) el.classList.add('sel');
+  calcPreview();
+}
+
 function renderExList() {
+  if(curDay === 'run') { renderRunUI(); return; }
   const exs = EXDB[curDay];
   setCounts = {};
   exs.forEach(e => setCounts[e.n] = 0);
@@ -1243,6 +1298,11 @@ function chgSet(n, d) {
 }
 
 function calcFP() {
+  if(curDay === 'run') {
+    const d = RUN_DISTANCES.find(x => x.km === selectedRunKm);
+    const fp = d ? d.fp : 0;
+    return { base:fp, comp:0, po:0, por:0, pr:0, card:0, tsB:0, total:fp, tierSCount:0 };
+  }
   const exs = EXDB[curDay];
   let base = 0, tierSCount = 0;
   exs.forEach(e => {
@@ -1264,6 +1324,11 @@ function calcFP() {
 function calcPreview() {
   const c = calcFP();
   document.getElementById('fpPrevN').textContent = c.total + ' FP';
+  if(curDay === 'run') {
+    const d = RUN_DISTANCES.find(x => x.km === selectedRunKm);
+    document.getElementById('fpPrevB').textContent = d ? `Running Reward 🏃 — ${d.label}` : 'เลือกระยะทางที่วิ่งได้';
+    return;
+  }
   const parts = ['Base: '+c.base];
   if(c.comp) parts.push('Completion: +'+c.comp);
   if(c.po)   parts.push('Overload: +'+c.po);
@@ -1276,7 +1341,7 @@ function calcPreview() {
 
 function logWorkout() {
   const c = calcFP();
-  if(c.base === 0) { toast('เพิ่ม sets ก่อนนะ! 💪','red'); return; }
+  if(c.base === 0) { toast(curDay==='run' ? 'เลือกระยะทางก่อนนะ! 🏃' : 'เพิ่ม sets ก่อนนะ! 💪','red'); return; }
   const today = td();
   if(S.lastWO === today) { toast('บันทึก workout วันนี้แล้ว!','red'); return; }
 
@@ -1288,6 +1353,7 @@ function logWorkout() {
   S.wo++;
   if(c.pr) S.prs++;
   if(c.card) { weekCheck(); S.wkCardio++; }
+  if(curDay === 'run') { weekCheck(); S.wkCardio++; } // running = cardio
 
   // streak
   const yest = yd();
@@ -1307,30 +1373,49 @@ function logWorkout() {
   if(S.streak === 30) { sBonus = 300; addExp(500); toast('🔥 30-Day Streak LEGEND!','purple'); }
   if(sBonus) { S.fp += sBonus; S.totalFP += sBonus; S.monthlyFP = (S.monthlyFP||0) + sBonus; }
 
-  const dayLabel = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'MIX'}[curDay];
-  addLog(`💪 ${dayLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
+  const dayLabel = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'FULL BODY',run:'RUNNING'}[curDay];
+  const runDist  = curDay==='run' ? RUN_DISTANCES.find(x=>x.km===selectedRunKm) : null;
+  addLog(curDay==='run'
+    ? `🏃 RUNNING ${runDist?.label||''} — +${fpG} FP (+${xpG} EXP)`
+    : `💪 ${dayLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
   checkAch(); checkWQ();
   save(); updateUI();
 
   // modal
-  showModal(`
-    <div class="m-em">⚔️</div>
-    <div class="m-ttl">${dayLabel} Day Complete!</div>
-    <div class="m-sub">FP ที่ได้รับทั้งหมด</div>
-    <div class="m-fp">+${fpG} FP</div>
-    <div style="text-align:left;margin-bottom:16px">
-      <div class="ir"><span class="lbl">Base sets</span><span class="val" style="color:var(--gold)">+${c.base}</span></div>
-      ${c.comp ? `<div class="ir"><span class="lbl">Completion Bonus</span><span class="val" style="color:var(--gold)">+${c.comp}</span></div>` : ''}
-      ${c.po   ? `<div class="ir"><span class="lbl">Progressive Overload</span><span class="val" style="color:var(--gold)">+${c.po}</span></div>` : ''}
-      ${c.por  ? `<div class="ir"><span class="lbl">Rep Overload</span><span class="val" style="color:var(--gold)">+${c.por}</span></div>` : ''}
-      ${c.pr   ? `<div class="ir"><span class="lbl">PR Bonus 🏆</span><span class="val" style="color:var(--gold)">+${c.pr}</span></div>` : ''}
-      ${c.card ? `<div class="ir"><span class="lbl">Cardio Bonus 🏃</span><span class="val" style="color:var(--gold)">+${c.card}</span></div>` : ''}
-      ${c.tsB  ? `<div class="ir"><span class="lbl">Compound Bonus</span><span class="val" style="color:var(--gold)">+${c.tsB}</span></div>` : ''}
-      ${sBonus ? `<div class="ir"><span class="lbl">Streak Bonus 🔥</span><span class="val" style="color:var(--orange)">+${sBonus}</span></div>` : ''}
-      <div class="ir"><span class="lbl">EXP Gained</span><span class="val" style="color:var(--purple-light)">+${xpG}</span></div>
-    </div>
-    <button class="btn btn-gold" onclick="closeModal()">Accept! ⚔️</button>
-  `);
+  if(curDay === 'run') {
+    showModal(`
+      <div class="m-em">🏃</div>
+      <div class="m-ttl">Running Complete!</div>
+      <div class="m-sub">${runDist?.label || ''}</div>
+      <div class="m-fp">+${fpG} FP</div>
+      <div style="text-align:left;margin-bottom:16px">
+        <div class="ir"><span class="lbl">Running Reward</span><span class="val" style="color:var(--gold)">+${c.base}</span></div>
+        ${sBonus ? `<div class="ir"><span class="lbl">Streak Bonus 🔥</span><span class="val" style="color:var(--orange)">+${sBonus}</span></div>` : ''}
+        <div class="ir"><span class="lbl">EXP Gained</span><span class="val" style="color:var(--purple-light)">+${xpG}</span></div>
+        <div class="ir"><span class="lbl">Cardio</span><span class="val" style="color:var(--green)">✅ นับ Weekly Cardio</span></div>
+      </div>
+      <button class="btn btn-green" onclick="closeModal()">ยอดเยี่ยม! 🏃</button>
+    `);
+  } else {
+    showModal(`
+      <div class="m-em">⚔️</div>
+      <div class="m-ttl">${dayLabel} Day Complete!</div>
+      <div class="m-sub">FP ที่ได้รับทั้งหมด</div>
+      <div class="m-fp">+${fpG} FP</div>
+      <div style="text-align:left;margin-bottom:16px">
+        <div class="ir"><span class="lbl">Base sets</span><span class="val" style="color:var(--gold)">+${c.base}</span></div>
+        ${c.comp ? `<div class="ir"><span class="lbl">Completion Bonus</span><span class="val" style="color:var(--gold)">+${c.comp}</span></div>` : ''}
+        ${c.po   ? `<div class="ir"><span class="lbl">Progressive Overload</span><span class="val" style="color:var(--gold)">+${c.po}</span></div>` : ''}
+        ${c.por  ? `<div class="ir"><span class="lbl">Rep Overload</span><span class="val" style="color:var(--gold)">+${c.por}</span></div>` : ''}
+        ${c.pr   ? `<div class="ir"><span class="lbl">PR Bonus 🏆</span><span class="val" style="color:var(--gold)">+${c.pr}</span></div>` : ''}
+        ${c.card ? `<div class="ir"><span class="lbl">Cardio Bonus 🏃</span><span class="val" style="color:var(--gold)">+${c.card}</span></div>` : ''}
+        ${c.tsB  ? `<div class="ir"><span class="lbl">Compound Bonus</span><span class="val" style="color:var(--gold)">+${c.tsB}</span></div>` : ''}
+        ${sBonus ? `<div class="ir"><span class="lbl">Streak Bonus 🔥</span><span class="val" style="color:var(--orange)">+${sBonus}</span></div>` : ''}
+        <div class="ir"><span class="lbl">EXP Gained</span><span class="val" style="color:var(--purple-light)">+${xpG}</span></div>
+      </div>
+      <button class="btn btn-gold" onclick="closeModal()">Accept! ⚔️</button>
+    `);
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -1750,7 +1835,7 @@ function showPage(p) {
   document.getElementById('nav-'+p).classList.add('active');
   document.getElementById('app-content').scrollTop = 0;
   if(p==='shop')    renderShop();
-  if(p==='workout') { renderExList(); calcPreview(); }
+  if(p==='workout') { selDay(curDay); calcPreview(); }
   if(p==='profile') { renderAch(); renderCharStats(); renderLog(); }
   if(p==='rank')    renderRank();
 }
