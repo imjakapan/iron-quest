@@ -335,7 +335,8 @@ body {
   display:flex; align-items:center; justify-content:center;
   font-size:10px; color:var(--text-dim); flex-direction:column; gap:1px;
 }
-.wk-d.done { background:var(--green); border-color:var(--green); color:#fff; font-size:16px; }
+.wk-d.done  { background:var(--green); border-color:var(--green); color:#fff; font-size:16px; }
+.wk-d.rest  { background:rgba(100,116,139,.2); border-color:var(--text-dim); color:var(--text-dim); font-size:15px; }
 .wk-d.today { border-color:var(--gold); color:var(--gold); }
 .wk-d-lbl { font-size:9px; }
 
@@ -766,7 +767,10 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
       </div>
       <!-- Week dots -->
       <div class="card" style="padding:14px">
-        <div class="card-title">Weekly Progress</div>
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span>Weekly Progress</span>
+          <button id="restDayBtn" class="btn btn-outline btn-xs" onclick="claimRestDay()" style="font-size:11px">😴 วันพัก (0/1)</button>
+        </div>
         <div class="wk-days" id="wkDays"></div>
       </div>
     </div><!-- /left col -->
@@ -935,7 +939,7 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
     <div class="card-title" style="color:var(--red)">⚠️ Penalty — สารภาพที่นี่</div>
     <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">กดถ้าทำสิ่งนี้โดย<strong>ไม่</strong>แลก FP ก่อน</div>
     <button class="pen-btn" onclick="penalty('skip',80)"><span class="pen-ic">🚫</span><div class="pen-info"><div class="pen-nm">Skip Workout (ไม่ได้วางแผน)</div><div style="font-size:10px;color:var(--text-dim)">Streak รีเซ็ตด้วย</div></div><div class="pen-am">−80 FP</div></button>
-    <button class="pen-btn" onclick="penalty('junk',100)"><span class="pen-ic">🍟</span><div class="pen-info"><div class="pen-nm">กินของทอด / Junk Food</div></div><div class="pen-am">−100 FP</div></button>
+    <button class="pen-btn" onclick="penalty('junk',70)"><span class="pen-ic">🍟</span><div class="pen-info"><div class="pen-nm">กินของทอด / Junk Food</div></div><div class="pen-am">−70 FP</div></button>
     <button class="pen-btn" onclick="penalty('beer',150)"><span class="pen-ic">🍺</span><div class="pen-info"><div class="pen-nm">ดื่มเบียร์ (ไม่ได้แลก)</div></div><div class="pen-am">−150 FP</div></button>
     <button class="pen-btn" onclick="penalty('sleep',30)"><span class="pen-ic">😵</span><div class="pen-info"><div class="pen-nm">นอนน้อยกว่า 6 ชั่วโมง</div></div><div class="pen-am">−30 FP</div></button>
     <button class="pen-btn" onclick="penalty('quit',40)"><span class="pen-ic">🏃</span><div class="pen-info"><div class="pen-nm">เลิก workout กลางคัน</div></div><div class="pen-am">−40 FP</div></button>
@@ -1106,7 +1110,7 @@ const RUN_DISTANCES = [
 const SHOP = {
   food:[
     {e:'🍺',n:'เบียร์ 1 กระป๋อง',p:150},{e:'🍶',n:'เบียร์ 1 ขวดใหญ่',p:250},
-    {e:'🍟',n:'ของทอด 1 มื้อ',p:120},{e:'🧋',n:'ของหวาน',p:80},
+    {e:'🍟',n:'ของทอด 1 มื้อ',p:50},{e:'🧋',n:'ของหวาน',p:80},
     {e:'🥤',n:'น้ำอัดลม / ชา',p:60},{e:'🍕',n:'Junk Combo Deal',p:230},
   ],
   act:[
@@ -1175,11 +1179,11 @@ const WD_NAMES = ['จ','อ','พ','พฤ','ศ','ส','อา'];
 function defState() {
   return {
     fp:0, exp:0, lv:1,
-    streak:0, lastWO:null,
+    streak:0, lastWO:null, lastWOTypes:{},
     wo:0, totalFP:0, prs:0, penalties:0,
     soberDays:0, cleanDays:0,
     wkStart:null, wkWO:0, wkPR:0, wkCardio:0, wkProt:0, wkSleep:0, wkClean:0,
-    wkLog:[], wkQId:null, wkQDone:false,
+    wkLog:[], wkRestDate:null, wkRestDates:[], wkQId:null, wkQDone:false,
     dqDate:null, dqIds:[], dqDone:[],
     lastHabit:null,
     monthlyFP:0, monthlyReset:null,
@@ -1343,7 +1347,9 @@ function logWorkout() {
   const c = calcFP();
   if(c.base === 0) { toast(curDay==='run' ? 'เลือกระยะทางก่อนนะ! 🏃' : 'เพิ่ม sets ก่อนนะ! 💪','red'); return; }
   const today = td();
-  if(S.lastWO === today) { toast('บันทึก workout วันนี้แล้ว!','red'); return; }
+  if(!S.lastWOTypes) S.lastWOTypes = {};
+  const typeNm = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'FULL BODY',run:'RUNNING'}[curDay];
+  if(S.lastWOTypes[curDay] === today) { toast(`บันทึก ${typeNm} วันนี้แล้ว! 🔄`,'red'); return; }
 
   const fpG = c.total;
   const xpG = 100 + (c.pr ? 150 : 0);
@@ -1361,6 +1367,7 @@ function logWorkout() {
   else if(S.lastWO !== today) S.streak = 1;
   S.lastWO = today;
 
+  S.lastWOTypes[curDay] = today;  // ป้องกัน log ซ้ำ type เดิมวันเดียวกัน
   weekCheck();
   S.wkWO++;
   S.wkPR += c.pr ? 1 : 0;
@@ -1373,7 +1380,7 @@ function logWorkout() {
   if(S.streak === 30) { sBonus = 300; addExp(500); toast('🔥 30-Day Streak LEGEND!','purple'); }
   if(sBonus) { S.fp += sBonus; S.totalFP += sBonus; S.monthlyFP = (S.monthlyFP||0) + sBonus; }
 
-  const dayLabel = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'FULL BODY',run:'RUNNING'}[curDay];
+  const dayLabel = typeNm;
   const runDist  = curDay==='run' ? RUN_DISTANCES.find(x=>x.km===selectedRunKm) : null;
   addLog(curDay==='run'
     ? `🏃 RUNNING ${runDist?.label||''} — +${fpG} FP (+${xpG} EXP)`
@@ -1733,12 +1740,14 @@ function weekCheck() {
   if(S.wkStart !== ws) {
     S.wkStart=ws; S.wkWO=0; S.wkPR=0; S.wkCardio=0;
     S.wkProt=0; S.wkSleep=0; S.wkClean=0; S.wkLog=[];
+    S.wkRestDate=null; S.wkRestDates=[];
     S.wkQId=null; S.wkQDone=false;
   }
 }
 
 function renderWkDays() {
-  const done = S.wkLog||[];
+  const done  = S.wkLog||[];
+  const rests = S.wkRestDates||[];
   const today = td();
   let html='';
   for(let i=0;i<7;i++){
@@ -1749,11 +1758,32 @@ function renderWkDays() {
     const ds = dd.toISOString().split('T')[0];
     const isToday = diff===0;
     const isDone  = done.includes(ds);
-    html += `<div class="wk-d ${isDone?'done':isToday?'today':''}">
-      ${isDone ? '✓' : `<span class="wk-d-lbl">${WD_NAMES[i]}</span>`}
+    const isRest  = rests.includes(ds);
+    const cls = isDone ? 'done' : isRest ? 'rest' : isToday ? 'today' : '';
+    html += `<div class="wk-d ${cls}">
+      ${isDone ? '✓' : isRest ? '😴' : `<span class="wk-d-lbl">${WD_NAMES[i]}</span>`}
     </div>`;
   }
   document.getElementById('wkDays').innerHTML = html;
+}
+
+function claimRestDay() {
+  const today = td();
+  weekCheck();
+  if(S.wkRestDate) { toast('ใช้วันพักสัปดาห์นี้แล้ว (1 ครั้ง/สัปดาห์) 😴','red'); return; }
+  if((S.wkLog||[]).includes(today)) { toast('ออกกำลังกายวันนี้แล้ว ใช้วันพักไม่ได้','red'); return; }
+  if(!confirm('ยืนยันวันพักวันนี้?\n\n😴 Streak ไม่ถูก reset\n✅ ใช้ได้ 1 วัน/สัปดาห์')) return;
+
+  S.wkRestDate = today;
+  if(!S.wkRestDates) S.wkRestDates = [];
+  S.wkRestDates.push(today);
+
+  // set lastWO = today เพื่อไม่ให้ streak แตกพรุ่งนี้
+  S.lastWO = today;
+
+  addLog('😴 Rest Day — streak ไม่หาย');
+  save(); updateHomeUI();
+  toast('😴 Rest Day! Streak คงอยู่','green');
 }
 
 // ════════════════════════════════════════════════
@@ -1796,6 +1826,19 @@ function updateHomeUI() {
   document.getElementById('stPN').textContent = S.penalties;
 
   renderWkDays();
+
+  // Rest day button state
+  const rdBtn = document.getElementById('restDayBtn');
+  if(rdBtn) {
+    const rdUsed     = !!S.wkRestDate;
+    const woToday    = (S.wkLog||[]).includes(td());
+    const canRest    = !rdUsed && !woToday;
+    rdBtn.textContent      = `😴 วันพัก (${rdUsed?1:0}/1)`;
+    rdBtn.style.opacity    = rdUsed ? '.4' : '1';
+    rdBtn.style.pointerEvents = rdUsed ? 'none' : 'auto';
+    rdBtn.title = rdUsed ? 'ใช้วันพักสัปดาห์นี้แล้ว' : woToday ? 'ออกกำลังกายวันนี้แล้ว' : 'กดเพื่อบันทึกวันพัก';
+  }
+
   renderDQ();
   renderWQ();
 }

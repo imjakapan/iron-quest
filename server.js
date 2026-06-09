@@ -76,6 +76,7 @@ function defState() {
     wkStart:null, wkWO:0, wkPR:0, wkCardio:0, wkProt:0, wkSleep:0, wkClean:0,
     wkLog:[], wkQId:null, wkQDone:false,
     dqDate:null, dqIds:[], dqDone:[],
+    lastWOTypes:{}, wkRestDate:null, wkRestDates:[],
     lastHabit:null, monthlyFP:0, monthlyReset:null, ach:[], purchases:[], log:[]
   };
 }
