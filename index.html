@@ -642,6 +642,18 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
 .nut-tmpl-chip:hover { border-color:var(--gold); }
 .nut-tmpl-chip .del { color:var(--text-dim); padding:0 3px; cursor:pointer; font-size:13px; line-height:1; }
 .nut-tmpl-chip .del:hover { color:var(--red); }
+/* ─── STRENGTH TRACKER ─── */
+.str-stat-grid  { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
+.str-stat-box   { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+.str-stat-lbl   { font-size:10px; color:var(--text-dim); margin-bottom:2px; }
+.str-stat-val   { font-size:18px; font-weight:800; color:var(--gold); line-height:1.1; }
+.str-stat-sub   { font-size:10px; color:var(--text-dim); margin-top:1px; }
+.str-entry      { padding:9px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.str-entry-main { font-size:14px; font-weight:700; }
+.str-entry-sub  { font-size:10px; color:var(--text-dim); }
+.str-plat-warn  { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:12px; }
+.str-prog-w  { color:#22c55e; font-size:11px; font-weight:800; }
+.str-prog-r  { color:#60a5fa; font-size:11px; font-weight:800; }
 </style>
 </head>
 <body>
@@ -843,10 +855,17 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
 <!-- ─────────────────── PAGE: WORKOUT ─────────────────── -->
 <div id="page-workout" class="page">
 
-  <div class="sh" style="margin-bottom:14px">
-    <div class="sh-t">💪 Log Workout</div>
+  <div class="sh" style="margin-bottom:12px">
+    <div class="sh-t">💪 Workout</div>
     <span style="font-size:11px;color:var(--text-dim)" id="wkDateDisp"></span>
   </div>
+
+  <div class="nut-tabs" style="margin-bottom:14px">
+    <button class="nut-tab active" id="wTab0" onclick="wTab(0)">⚔️ Log Workout</button>
+    <button class="nut-tab"       id="wTab1" onclick="wTab(1)">📊 Strength Tracker</button>
+  </div>
+
+  <div id="wPage0">
 
   <!-- Day selector -->
   <div class="day-sel">
@@ -904,6 +923,65 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
 
   </div><!-- /rsp-row -->
   <div style="height:8px"></div>
+  </div><!-- /wPage0 -->
+
+  <!-- ─── wPage1: STRENGTH TRACKER ─── -->
+  <div id="wPage1" style="display:none">
+
+    <div class="nut-tabs" style="margin-bottom:14px">
+      <button class="nut-tab active" id="stTab0" onclick="stTab(0)">📝 บันทึก</button>
+      <button class="nut-tab"       id="stTab1" onclick="stTab(1)">📖 History</button>
+      <button class="nut-tab"       id="stTab2" onclick="stTab(2)">🏆 Records</button>
+    </div>
+
+    <!-- stPage0: Log form -->
+    <div id="stPage0">
+      <div class="card">
+        <div class="card-title">📝 บันทึก Strength</div>
+        <datalist id="strExList"></datalist>
+
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">ท่าออกกำลังกาย</div>
+        <input type="text" id="strEx" list="strExList" class="nut-field" placeholder="เช่น Bench Press, Squat…" style="margin-bottom:8px" oninput="loadStrRecentRef()">
+
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">วันที่</div>
+        <input type="date" id="strDate" class="nut-field" style="margin-bottom:10px">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">⚖️ Weight (kg)</div>
+            <input type="number" id="strW" class="nut-field" placeholder="0" min="0" step="0.5" oninput="updateStrPreview()">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🔢 Reps</div>
+            <input type="number" id="strR" class="nut-field" placeholder="0" min="1" oninput="updateStrPreview()">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">📦 Sets</div>
+            <input type="number" id="strS" class="nut-field" placeholder="0" min="1" oninput="updateStrPreview()">
+          </div>
+        </div>
+
+        <div id="strPreview" style="margin-bottom:8px"></div>
+        <div id="strRecentRef" style="margin-bottom:12px"></div>
+
+        <button class="btn btn-gold" onclick="saveStrLift()">💪 บันทึก Strength</button>
+      </div>
+    </div><!-- /stPage0 -->
+
+    <!-- stPage1: History -->
+    <div id="stPage1" style="display:none">
+      <datalist id="strHistExList"></datalist>
+      <div id="strHistContent"></div>
+    </div><!-- /stPage1 -->
+
+    <!-- stPage2: Records -->
+    <div id="stPage2" style="display:none">
+      <div id="strRecordsContent"></div>
+    </div><!-- /stPage2 -->
+
+    <div style="height:8px"></div>
+  </div><!-- /wPage1 -->
+
 </div><!-- /workout -->
 
 <!-- ─────────────────── PAGE: DAILY ─────────────────── -->
@@ -1268,6 +1346,8 @@ const EXDB = {
   ]
 };
 
+const STR_EXERCISES = [...new Set(Object.values(EXDB).flat().map(e=>e.n))].sort();
+
 const RUN_DISTANCES = [
   {km:3,  fp:10,  label:'3 km'},
   {km:5,  fp:20,  label:'5 km'},
@@ -1367,6 +1447,7 @@ function defState() {
     meals:[], mealTemplates:[],
     nutLastReward:null,
     nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
+    strengthLog:[], strengthPRs:{},
     ach:[],
     purchases:[],
     log:[]
@@ -1376,6 +1457,7 @@ function defState() {
 let S = defState();
 let currentUser = null, currentPIN = null;
 let _saveTimer = null;
+let wCurTab = 0, stCurTab = 0, strSelEx = '', strChartMetric = 'weight', strChartPeriod = 90;
 
 function save() {
   if (!currentUser || !currentPIN) return;
@@ -2085,6 +2167,394 @@ function updateUI() {
 }
 
 // ════════════════════════════════════════════════
+//  STRENGTH PROGRESSION TRACKING
+// ════════════════════════════════════════════════
+
+function wTab(n) {
+  wCurTab = n;
+  [0,1].forEach(i => {
+    const t = document.getElementById('wTab'+i);
+    const p = document.getElementById('wPage'+i);
+    if(t) t.classList.toggle('active', i===n);
+    if(p) p.style.display = i===n ? '' : 'none';
+  });
+  if(n===0) { selDay(curDay); calcPreview(); }
+  else stTab(stCurTab);
+}
+
+function stTab(n) {
+  stCurTab = n;
+  [0,1,2].forEach(i => {
+    const t = document.getElementById('stTab'+i);
+    const p = document.getElementById('stPage'+i);
+    if(t) t.classList.toggle('active', i===n);
+    if(p) p.style.display = i===n ? '' : 'none';
+  });
+  if(n===0) renderStrLog();
+  else if(n===1) renderStrHistory();
+  else renderStrRecords();
+}
+
+function calc1RM(w, r) {
+  if(!r || r<=0) return 0;
+  if(r===1) return w;
+  return Math.round(w * (1 + r/30) * 10) / 10;
+}
+
+function daysDiff(d1, d2) {
+  return Math.round((new Date(d2) - new Date(d1)) / 86400000);
+}
+
+function fillStrDatalist(id) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  const logged = [...new Set((S.strengthLog||[]).map(e=>e.exercise))];
+  const all = [...new Set([...logged, ...STR_EXERCISES])];
+  el.innerHTML = all.map(e=>`<option value="${e}">`).join('');
+}
+
+function getStrExLogs(exercise) {
+  return (S.strengthLog||[])
+    .filter(e=>e.exercise===exercise)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function renderStrLog() {
+  fillStrDatalist('strExList');
+  const dateEl = document.getElementById('strDate');
+  if(dateEl && !dateEl.value) dateEl.value = td();
+  updateStrPreview();
+  loadStrRecentRef();
+}
+
+function updateStrPreview() {
+  const w = parseFloat(document.getElementById('strW')?.value)||0;
+  const r = parseInt(document.getElementById('strR')?.value)||0;
+  const s = parseInt(document.getElementById('strS')?.value)||0;
+  const el = document.getElementById('strPreview');
+  if(!el) return;
+  if(w && r && s) {
+    const vol = Math.round(w*r*s);
+    const oneRM = calc1RM(w,r);
+    el.innerHTML = `<div style="display:flex;gap:14px;flex-wrap:wrap;padding:8px 10px;background:var(--bg-card2);border-radius:8px">
+      <span style="font-size:12px;color:var(--text-dim)">Volume: <strong style="color:var(--gold)">${vol} kg</strong></span>
+      <span style="font-size:12px;color:var(--text-dim)">1RM (Epley): <strong style="color:#a78bfa">${oneRM} kg</strong></span>
+    </div>`;
+  } else el.innerHTML = '';
+}
+
+function loadStrRecentRef() {
+  const ex = (document.getElementById('strEx')?.value||'').trim();
+  const ref = document.getElementById('strRecentRef');
+  if(!ref) return;
+  if(!ex) { ref.innerHTML=''; return; }
+  const logs = getStrExLogs(ex).slice(-3).reverse();
+  if(!logs.length) {
+    ref.innerHTML='<div style="font-size:11px;color:var(--text-dim);margin-top:4px">ยังไม่มีประวัติสำหรับท่านี้</div>';
+    return;
+  }
+  ref.innerHTML = `<div style="font-size:11px;color:var(--text-dim);margin-top:10px;margin-bottom:4px">ย้อนหลัง ${logs.length} ครั้งล่าสุด</div>`
+    + logs.map(e=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+        <span style="color:var(--text-dim)">${e.date}</span>
+        <strong>${e.weight}kg × ${e.reps} × ${e.sets}</strong>
+        <span style="color:var(--text-dim)">${e.oneRM}kg 1RM</span>
+      </div>`).join('');
+}
+
+function saveStrLift() {
+  const exercise = (document.getElementById('strEx')?.value||'').trim();
+  if(!exercise) { toast('กรุณาเลือกท่าออกกำลังกาย','red'); return; }
+  const date   = document.getElementById('strDate')?.value || td();
+  const weight = parseFloat(document.getElementById('strW')?.value)||0;
+  const reps   = parseInt(document.getElementById('strR')?.value)||0;
+  const sets   = parseInt(document.getElementById('strS')?.value)||0;
+  if(!weight||!reps||!sets) { toast('กรุณากรอก Weight, Reps และ Sets','red'); return; }
+
+  const volume = Math.round(weight*reps*sets);
+  const oneRM  = calc1RM(weight, reps);
+
+  if(!S.strengthLog) S.strengthLog = [];
+  if(!S.strengthPRs) S.strengthPRs = {};
+
+  const pr = S.strengthPRs[exercise] || {bestWeight:0,bestReps:0,bestVolume:0,best1RM:0,lastProgressDate:null,sessions:0};
+  const prevLogs = getStrExLogs(exercise).filter(e=>e.date<date);
+  const lastLog  = prevLogs.length ? prevLogs[prevLogs.length-1] : null;
+
+  // PR detection
+  const isWeightPR = weight > pr.bestWeight;
+  const isRepsPR   = reps   > pr.bestReps;
+  const isVolumePR = volume > pr.bestVolume;
+  const is1RMPR    = oneRM  > pr.best1RM;
+  const isAnyPR    = isWeightPR||isRepsPR||isVolumePR||is1RMPR;
+
+  // Progress vs last session
+  let progType = null;
+  if(lastLog) {
+    if(weight > lastLog.weight) progType = 'weight';
+    else if(weight >= lastLog.weight && reps > lastLog.reps) progType = 'reps';
+  } else progType = 'first';
+
+  const madeProg = progType !== null;
+  const plateauDays = pr.lastProgressDate ? daysDiff(pr.lastProgressDate, date) : 0;
+  const isBreakPlateau = madeProg && plateauDays > 28;
+
+  const entry = {id:Date.now(), date, exercise, weight, reps, sets, volume, oneRM, progress:progType};
+  S.strengthLog.push(entry);
+
+  // Update PR record
+  pr.sessions = (pr.sessions||0)+1;
+  if(weight>pr.bestWeight) pr.bestWeight = weight;
+  if(reps>pr.bestReps)     pr.bestReps   = reps;
+  if(volume>pr.bestVolume) pr.bestVolume = volume;
+  if(oneRM>pr.best1RM)     pr.best1RM    = oneRM;
+  if(madeProg) pr.lastProgressDate = date;
+  S.strengthPRs[exercise] = pr;
+
+  // FP rewards
+  let fpGain = 0, reasons = [];
+  if(progType==='weight')  { fpGain+=5;  reasons.push('+5 น้ำหนักเพิ่ม'); }
+  if(progType==='reps')    { fpGain+=3;  reasons.push('+3 Reps เพิ่ม'); }
+  if(isAnyPR)              { fpGain+=10; reasons.push('+10 NEW PR!'); }
+  if(isBreakPlateau)       { fpGain+=15; reasons.push('+15 Plateau Break!'); }
+
+  if(fpGain>0) {
+    S.fp+=fpGain; S.totalFP+=fpGain; S.monthlyFP=(S.monthlyFP||0)+fpGain;
+    addLog(`💪 Strength${isAnyPR?' PR':''} [${exercise}] ${weight}kg×${reps}×${sets} — +${fpGain} FP`);
+  }
+  save(); updateHomeUI();
+
+  if(isAnyPR||isBreakPlateau) {
+    showStrPRModal(exercise, entry, pr, {isWeightPR,isRepsPR,isVolumePR,is1RMPR,isBreakPlateau,fpGain,reasons});
+  } else {
+    const icon = madeProg ? '📈' : '—';
+    toast(`✅ ${exercise} ${weight}kg×${reps}×${sets} ${icon}`, madeProg?'green':'gold');
+    strSelEx = exercise;
+    stTab(1);
+  }
+}
+
+function showStrPRModal(exercise, entry, pr, f) {
+  const rows = [
+    f.isWeightPR  && `<div class="ir"><span class="lbl">🏋️ New Weight PR</span><span class="val" style="color:var(--gold)">${entry.weight} kg</span></div>`,
+    f.isRepsPR    && `<div class="ir"><span class="lbl">🔢 New Reps PR</span><span class="val" style="color:#22c55e">${entry.reps} reps</span></div>`,
+    f.isVolumePR  && `<div class="ir"><span class="lbl">📦 New Volume PR</span><span class="val" style="color:#60a5fa">${entry.volume} kg</span></div>`,
+    f.is1RMPR     && `<div class="ir"><span class="lbl">⚡ New 1RM PR</span><span class="val" style="color:#a78bfa">${entry.oneRM} kg</span></div>`,
+    f.isBreakPlateau && `<div class="ir"><span class="lbl">🔓 Plateau Broken!</span><span class="val" style="color:var(--orange)">+15 FP bonus</span></div>`,
+  ].filter(Boolean).join('');
+  showModal(`
+    <div class="m-em">💪</div>
+    <div class="m-ttl" style="color:var(--gold)">NEW PERSONAL RECORD!</div>
+    <div class="m-sub">${exercise}</div>
+    <div class="m-fp">${entry.weight}kg × ${entry.reps} × ${entry.sets}</div>
+    <div style="text-align:left;margin-bottom:16px">
+      ${rows}
+      ${f.fpGain>0?`<div class="ir" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span class="lbl">🎯 รวม FP</span><span class="val" style="color:var(--gold);font-size:18px">+${f.fpGain} FP</span></div>`:''}
+    </div>
+    <button class="btn btn-gold" onclick="closeModal();strSelEx='${exercise}';stTab(1)">📖 ดู History</button>
+  `);
+}
+
+function renderStrHistory() {
+  fillStrDatalist('strHistExList');
+  const el = document.getElementById('strHistContent');
+  if(!el) return;
+
+  if(!strSelEx) {
+    const logged = [...new Set((S.strengthLog||[]).map(e=>e.exercise))].sort();
+    if(!logged.length) {
+      el.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:30px">ยังไม่มีข้อมูล<br><small>ไปบันทึก Strength ที่แท็บ 📝 ก่อนนะ!</small></div>';
+      return;
+    }
+    el.innerHTML = '<div class="card">'
+      + `<div class="card-title">เลือกท่าเพื่อดู History</div>`
+      + logged.map(ex => {
+          const logs = getStrExLogs(ex);
+          const pr   = S.strengthPRs?.[ex]||{};
+          const last = logs[logs.length-1];
+          const platDays = pr.lastProgressDate ? daysDiff(pr.lastProgressDate, td()) : 0;
+          const isPlat = platDays > 28;
+          return `<div onclick="strSelEx='${ex}';renderStrHistory()" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer">
+            <div>
+              <div style="font-size:14px;font-weight:700">${ex}</div>
+              <div style="font-size:11px;color:var(--text-dim)">${logs.length} sessions · Best ${pr.bestWeight||0}kg × ${pr.bestReps||0} reps</div>
+            </div>
+            <div style="text-align:right">
+              ${isPlat?`<div style="color:var(--red);font-size:10px;font-weight:700">⚠️ Plateau ${platDays}d</div>`:''}
+              <div style="font-size:11px;color:var(--text-dim)">${last?.date||''}</div>
+            </div>
+          </div>`;
+        }).join('')
+      + '</div>';
+    return;
+  }
+
+  // Detail view for selected exercise
+  const logs   = getStrExLogs(strSelEx);
+  const pr     = S.strengthPRs?.[strSelEx] || {};
+  const last   = logs[logs.length-1];
+  const platDays = pr.lastProgressDate ? daysDiff(pr.lastProgressDate, td()) : 0;
+  const isPlat = platDays > 28;
+  const cur1RM = last ? calc1RM(last.weight, last.reps) : 0;
+
+  const cutoffStr = strChartPeriod > 0
+    ? (()=>{ const d=new Date(); d.setDate(d.getDate()-strChartPeriod); return d.toISOString().split('T')[0]; })()
+    : null;
+  const chartLogs = cutoffStr ? logs.filter(e=>e.date>=cutoffStr) : logs;
+
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-size:16px;font-weight:800">${strSelEx}</div>
+          <div style="font-size:11px;color:var(--text-dim)">${logs.length} sessions</div>
+        </div>
+        <button class="btn btn-outline btn-xs" onclick="strSelEx='';renderStrHistory()">← Back</button>
+      </div>
+
+      ${isPlat?`<div class="str-plat-warn">⚠️ <strong>Plateau ${platDays} วัน</strong> — ยังไม่มี Progress ถึงเวลาปรับ Program แล้ว!</div>`:''}
+
+      <div class="str-stat-grid">
+        ${[
+          {l:'Weight',  v:(last?.weight||0)+'kg', s:'Best: '+(pr.bestWeight||0)+'kg'},
+          {l:'1RM',     v:cur1RM+'kg',             s:'Best: '+(pr.best1RM||0)+'kg'},
+          {l:'Volume',  v:(last?.volume||0)+'kg',  s:'Best: '+(pr.bestVolume||0)+'kg'},
+          {l:'Reps',    v:last?.reps||0,            s:'Best: '+(pr.bestReps||0)},
+        ].map(x=>`<div class="str-stat-box">
+          <div class="str-stat-lbl">${x.l}</div>
+          <div class="str-stat-val">${x.v}</div>
+          <div class="str-stat-sub">${x.s}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 Progress Chart</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        ${['weight','reps','volume','1rm'].map(m=>`
+          <button class="nut-flt-btn${strChartMetric===m?' sel':''}" onclick="strChartMetric='${m}';renderStrHistory()">
+            ${m==='weight'?'⚖️ Weight':m==='reps'?'🔢 Reps':m==='volume'?'📦 Volume':'⚡ 1RM'}
+          </button>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        ${[[30,'30d'],[90,'90d'],[365,'1y'],[0,'All']].map(([p,l])=>`
+          <button class="nut-flt-btn${strChartPeriod===p?' sel':''}" onclick="strChartPeriod=${p};renderStrHistory()">${l}</button>`).join('')}
+      </div>
+      ${strLineChart(chartLogs, strChartMetric)}
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Session History</div>
+      ${[...logs].reverse().map((e,idx)=>{
+          const progIcon = e.progress==='weight'?'<span class="str-prog-w">⬆️ Weight UP</span>'
+            : e.progress==='reps'?'<span class="str-prog-r">↗️ Reps UP</span>':'';
+          return `<div class="str-entry">
+            <div>
+              <div class="str-entry-sub">${e.date}</div>
+              <div class="str-entry-main">${e.weight}kg × ${e.reps} × ${e.sets}</div>
+              <div class="str-entry-sub">Vol: ${e.volume}kg | 1RM: ${e.oneRM}kg</div>
+            </div>
+            <div style="text-align:right">
+              ${progIcon}
+              <button class="btn btn-outline btn-xs" style="margin-top:4px;color:var(--red);border-color:rgba(239,68,68,.3);font-size:10px" onclick="deleteStrEntry(${e.id})">🗑️</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`;
+}
+
+function deleteStrEntry(id) {
+  if(!confirm('ลบรายการนี้?')) return;
+  const entry = (S.strengthLog||[]).find(e=>e.id===id);
+  S.strengthLog = (S.strengthLog||[]).filter(e=>e.id!==id);
+  if(entry) recomputeStrPRs(entry.exercise);
+  save(); renderStrHistory();
+  toast('🗑️ ลบแล้ว','red');
+}
+
+function recomputeStrPRs(exercise) {
+  const logs = getStrExLogs(exercise);
+  if(!logs.length) { delete S.strengthPRs[exercise]; return; }
+  const pr = {bestWeight:0,bestReps:0,bestVolume:0,best1RM:0,lastProgressDate:null,sessions:logs.length};
+  logs.forEach((e,i)=>{
+    if(e.weight>pr.bestWeight) pr.bestWeight=e.weight;
+    if(e.reps>pr.bestReps)     pr.bestReps=e.reps;
+    if(e.volume>pr.bestVolume) pr.bestVolume=e.volume;
+    if(e.oneRM>pr.best1RM)     pr.best1RM=e.oneRM;
+    if(i===0||( i>0 && (e.weight>logs[i-1].weight||(e.weight>=logs[i-1].weight&&e.reps>logs[i-1].reps)) ))
+      pr.lastProgressDate=e.date;
+  });
+  S.strengthPRs[exercise]=pr;
+}
+
+function renderStrRecords() {
+  const el = document.getElementById('strRecordsContent');
+  if(!el) return;
+  const logged = [...new Set((S.strengthLog||[]).map(e=>e.exercise))].sort();
+  if(!logged.length) {
+    el.innerHTML='<div style="color:var(--text-dim);text-align:center;padding:30px">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  const today = td();
+  el.innerHTML = logged.map(ex=>{
+    const pr   = S.strengthPRs?.[ex]||{};
+    const logs = getStrExLogs(ex);
+    const last = logs[logs.length-1];
+    const platDays = pr.lastProgressDate ? daysDiff(pr.lastProgressDate, today) : 0;
+    const isPlat = platDays > 28;
+    const daysAgo = last ? daysDiff(last.date, today) : 0;
+    return `<div class="card" style="padding:12px;cursor:pointer;margin-bottom:8px" onclick="strSelEx='${ex}';stTab(1)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-size:15px;font-weight:800">${ex}</div>
+        ${isPlat?`<span style="background:rgba(239,68,68,.12);color:var(--red);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">⚠️ Plateau ${platDays}d</span>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
+        ${[
+          {l:'Best Weight',v:(pr.bestWeight||0)+'kg'},
+          {l:'Best 1RM',   v:(pr.best1RM||0)+'kg'},
+          {l:'Best Volume',v:(pr.bestVolume||0)+'kg'},
+          {l:'Sessions',   v:pr.sessions||0},
+        ].map(x=>`<div style="background:var(--bg-card2);border-radius:8px;padding:6px">
+          <div style="font-size:9px;color:var(--text-dim)">${x.l}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--gold)">${x.v}</div>
+        </div>`).join('')}
+      </div>
+      ${last?`<div style="font-size:10px;color:var(--text-dim);margin-top:6px">ล่าสุด: ${last.weight}kg×${last.reps}×${last.sets} • ${daysAgo===0?'วันนี้':daysAgo+' วันที่แล้ว'}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function strLineChart(logs, metric) {
+  if(!logs.length) return '<div style="color:var(--text-dim);text-align:center;padding:14px;font-size:12px">ไม่มีข้อมูลในช่วงเวลานี้</div>';
+  const getValue = e => metric==='weight'?e.weight : metric==='reps'?e.reps : metric==='volume'?e.volume : e.oneRM;
+  const unit = metric==='reps'?'':' kg';
+  const values = logs.map(getValue);
+  const labels = logs.map(e=>{ const d=new Date(e.date); return (d.getMonth()+1)+'/'+(d.getDate()); });
+  const n=values.length;
+  if(n===1) return `<div style="text-align:center;padding:14px;background:var(--bg-card2);border-radius:10px;font-size:13px">
+    <span style="color:var(--text-dim)">${labels[0]}:</span> <strong style="color:var(--gold)">${values[0]}${unit}</strong>
+  </div>`;
+  const W=300, H=110, PX=28, PY=16;
+  const min=Math.min(...values), max=Math.max(...values);
+  const range=max-min||1;
+  const xStep=(W-PX*2)/(n-1);
+  const yScale=(H-PY*2)/range;
+  const maxVal=Math.max(...values);
+  const pts=values.map((v,i)=>`${PX+i*xStep},${H-PY-(v-min)*yScale}`).join(' ');
+  const dots=values.map((v,i)=>{
+    const x=PX+i*xStep, y=H-PY-(v-min)*yScale;
+    const isMax=v===maxVal;
+    return `<circle cx="${x}" cy="${y}" r="${isMax?5:3}" fill="${isMax?'var(--gold)':'#a78bfa'}" stroke="var(--bg-card)" stroke-width="1.5"/>
+      <text x="${x}" y="${y-8}" text-anchor="middle" font-size="7.5" fill="${isMax?'#fcd34d':'#a78bfa'}">${v}${unit}</text>`;
+  }).join('');
+  const xLbls=labels.map((l,i)=>`<text x="${PX+i*xStep}" y="${H+8}" text-anchor="middle" font-size="7.5" fill="var(--text-dim)">${l}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H+16}" width="100%" style="overflow:visible;display:block">
+    <polygon points="${pts} ${PX+(n-1)*xStep},${H-PY} ${PX},${H-PY}" fill="rgba(124,58,237,.07)"/>
+    <polyline points="${pts}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${xLbls}
+  </svg>`;
+}
+
+// ════════════════════════════════════════════════
 //  NAVIGATION
 // ════════════════════════════════════════════════
 
@@ -2095,7 +2565,7 @@ function showPage(p) {
   document.getElementById('nav-'+p).classList.add('active');
   document.getElementById('app-content').scrollTop = 0;
   if(p==='shop')      renderShop();
-  if(p==='workout')   { selDay(curDay); calcPreview(); }
+  if(p==='workout')   { wTab(wCurTab); }
   if(p==='profile')   { renderAch(); renderCharStats(); renderLog(); }
   if(p==='rank')      renderRank();
   if(p==='nutrition') nutTab(nutCurTab);

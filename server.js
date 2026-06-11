@@ -82,6 +82,7 @@ function defState() {
     meals:[], mealTemplates:[],
     nutLastReward:null,
     nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
+    strengthLog:[], strengthPRs:{},
     ach:[], purchases:[], log:[]
   };
 }
@@ -96,6 +97,9 @@ function trimState(s) {
     cutoff.setDate(cutoff.getDate() - 90);
     const cutoffStr = cutoff.toISOString().split('T')[0];
     d.meals = d.meals.filter(m => m.date >= cutoffStr);
+  }
+  if (Array.isArray(d.strengthLog)) {
+    d.strengthLog = d.strengthLog.slice(-500);
   }
   return d;
 }
