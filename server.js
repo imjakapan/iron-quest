@@ -77,7 +77,12 @@ function defState() {
     wkLog:[], wkQId:null, wkQDone:false,
     dqDate:null, dqIds:[], dqDone:[],
     lastWOTypes:{}, wkRestDate:null, wkRestDates:[],
-    lastHabit:null, monthlyFP:0, monthlyReset:null, ach:[], purchases:[], log:[]
+    lastHabit:null, monthlyFP:0, monthlyReset:null,
+    nutritionGoals:{cal:2500,pro:140,carb:300,fat:70},
+    meals:[],
+    nutLastReward:null,
+    nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
+    ach:[], purchases:[], log:[]
   };
 }
 
@@ -86,6 +91,12 @@ function trimState(s) {
   const d = typeof s === 'string' ? JSON.parse(s) : JSON.parse(JSON.stringify(s));
   if (Array.isArray(d.log))       d.log       = d.log.slice(-20);
   if (Array.isArray(d.purchases)) d.purchases = d.purchases.slice(-20);
+  if (Array.isArray(d.meals)) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 90);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    d.meals = d.meals.filter(m => m.date >= cutoffStr);
+  }
   return d;
 }
 

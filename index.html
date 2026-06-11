@@ -613,6 +613,31 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   .char-grid { grid-template-columns: repeat(5, 1fr); gap: 18px; }
   .pin-key   { padding: 22px 10px; font-size: 24px; }
 }
+
+/* ─── NUTRITION ─── */
+.nut-tabs { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+.nut-tab  { flex-shrink:0; padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--bg-card2); font-size:11px; font-weight:700; cursor:pointer; transition:all .2s; color:var(--text-dim); }
+.nut-tab.active { background:var(--green); border-color:var(--green); color:#000; }
+.macro-bar-wrap { margin-bottom:10px; }
+.macro-label { display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; }
+.macro-bar  { height:10px; background:rgba(255,255,255,.08); border-radius:5px; overflow:hidden; }
+.macro-fill { height:100%; border-radius:5px; transition:width .6s ease; }
+.macro-fill.ok   { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+.macro-fill.good { background:linear-gradient(90deg,#15803d,#22c55e); }
+.macro-fill.warn { background:linear-gradient(90deg,#c2410c,#f97316); }
+.macro-fill.over { background:linear-gradient(90deg,#991b1b,#ef4444); }
+.meal-type-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+.mt-btn { padding:6px 14px; border-radius:16px; border:1px solid var(--border); background:var(--bg-card2); font-size:11px; cursor:pointer; transition:all .2s; color:var(--text-dim); }
+.mt-btn.sel { border-color:var(--gold); color:var(--gold); background:rgba(255,215,0,.08); }
+.meal-card { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+.meal-card-hd { display:flex; justify-content:space-between; align-items:flex-start; }
+.meal-card-nm { font-size:14px; font-weight:700; margin-bottom:3px; }
+.meal-card-macro { font-size:11px; color:var(--text-dim); }
+.nut-hist-filter { display:flex; gap:6px; margin-bottom:12px; }
+.nut-flt-btn { padding:5px 12px; border-radius:14px; border:1px solid var(--border); background:var(--bg-card2); font-size:11px; cursor:pointer; color:var(--text-dim); transition:all .2s; }
+.nut-flt-btn.sel { border-color:var(--purple); color:var(--purple-light); background:rgba(124,58,237,.1); }
+.nut-day-hd { font-size:12px; font-weight:700; color:var(--text-dim); margin:10px 0 6px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+.nut-field { width:100%; padding:8px 10px; background:var(--bg-card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; }
 </style>
 </head>
 <body>
@@ -1049,6 +1074,125 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   <div style="height:8px"></div>
 </div><!-- /rank -->
 
+<!-- ─────────────────── PAGE: NUTRITION ─────────────────── -->
+<div id="page-nutrition" class="page">
+  <div class="sh" style="margin-bottom:12px">
+    <div class="sh-t">🥗 Nutrition</div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="nut-tabs">
+    <button class="nut-tab active" id="nTab0" onclick="nutTab(0)">📊 วันนี้</button>
+    <button class="nut-tab"       id="nTab1" onclick="nutTab(1)">➕ บันทึก</button>
+    <button class="nut-tab"       id="nTab2" onclick="nutTab(2)">📋 ประวัติ</button>
+    <button class="nut-tab"       id="nTab3" onclick="nutTab(3)">📈 สถิติ</button>
+    <button class="nut-tab"       id="nTab4" onclick="nutTab(4)">⚙️ ตั้งค่า</button>
+  </div>
+
+  <!-- Sub 0: Today Dashboard -->
+  <div id="nPage0">
+    <div class="card" id="nutDashCard"></div>
+    <div class="card">
+      <div class="card-title">มื้ออาหารวันนี้</div>
+      <div id="nutTodayMeals"></div>
+    </div>
+  </div>
+
+  <!-- Sub 1: Log Meal -->
+  <div id="nPage1" style="display:none">
+    <div class="card">
+      <div class="card-title" id="nutFormTitle">➕ บันทึกอาหารใหม่</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">ประเภทมื้อ</div>
+      <div class="meal-type-tabs">
+        <button class="mt-btn sel" id="mtype-breakfast" onclick="selMealType('breakfast')">🌅 เช้า</button>
+        <button class="mt-btn"     id="mtype-lunch"     onclick="selMealType('lunch')">☀️ เที่ยง</button>
+        <button class="mt-btn"     id="mtype-dinner"    onclick="selMealType('dinner')">🌙 เย็น</button>
+        <button class="mt-btn"     id="mtype-snack"     onclick="selMealType('snack')">🍎 Snack</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">วันที่</div>
+      <input type="date" id="nutMealDate" class="nut-field" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">ชื่ออาหาร *</div>
+      <input type="text" id="nutName" class="nut-field" placeholder="เช่น ข้าวสวย, ไก่ย่าง" style="margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🔥 Calories (kcal)</div>
+          <input type="number" id="nutCal"  class="nut-field" placeholder="0" min="0">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🥩 Protein (g)</div>
+          <input type="number" id="nutPro"  class="nut-field" placeholder="0" min="0">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🍚 Carbs (g)</div>
+          <input type="number" id="nutCarb" class="nut-field" placeholder="0" min="0">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🫒 Fat (g)</div>
+          <input type="number" id="nutFat"  class="nut-field" placeholder="0" min="0">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Notes (ไม่บังคับ)</div>
+      <input type="text" id="nutNotes" class="nut-field" placeholder="หมายเหตุ..." style="margin-bottom:12px">
+      <button class="btn btn-gold" id="nutSaveBtn" onclick="saveMeal()">💾 บันทึกอาหาร</button>
+    </div>
+  </div>
+
+  <!-- Sub 2: History -->
+  <div id="nPage2" style="display:none">
+    <div class="nut-hist-filter">
+      <button class="nut-flt-btn sel" id="nflt-day"   onclick="nutHistFilter('day')">วันนี้</button>
+      <button class="nut-flt-btn"     id="nflt-week"  onclick="nutHistFilter('week')">สัปดาห์นี้</button>
+      <button class="nut-flt-btn"     id="nflt-month" onclick="nutHistFilter('month')">เดือนนี้</button>
+    </div>
+    <div id="nutHistList"></div>
+  </div>
+
+  <!-- Sub 3: Statistics -->
+  <div id="nPage3" style="display:none">
+    <div id="nutStatContent"></div>
+  </div>
+
+  <!-- Sub 4: Goals Settings -->
+  <div id="nPage4" style="display:none">
+    <div class="card">
+      <div class="card-title">เป้าหมายโภชนาการต่อวัน</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🔥 Calories (kcal)</div>
+        <input type="number" id="gCal"  class="nut-field" placeholder="2500" min="500" max="10000">
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🥩 Protein (g)</div>
+        <input type="number" id="gPro"  class="nut-field" placeholder="140" min="0" max="500">
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🍚 Carbohydrate (g)</div>
+        <input type="number" id="gCarb" class="nut-field" placeholder="300" min="0" max="2000">
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🫒 Fat (g)</div>
+        <input type="number" id="gFat"  class="nut-field" placeholder="70" min="0" max="500">
+      </div>
+      <button class="btn btn-gold" onclick="saveNutGoals()">💾 บันทึกเป้าหมาย</button>
+    </div>
+    <div class="card" style="background:rgba(124,58,237,.05);border-color:rgba(124,58,237,.2)">
+      <div class="card-title">🎯 FP Rewards (ต่อวัน)</div>
+      <div style="font-size:12px;line-height:2;color:var(--text-dim)">
+        🥩 Protein ถึงเป้า → <strong style="color:var(--gold)">+5 FP</strong><br>
+        🔥 Calories ±10% ของเป้า → <strong style="color:var(--gold)">+5 FP</strong><br>
+        🎯 ทุก Macro ถึงเป้า → <strong style="color:var(--gold)">+5 FP</strong><br>
+        ✨ Perfect Day (ทุก Reward) → <strong style="color:var(--gold)">+10 FP</strong><br>
+        <span style="font-size:10px">สูงสุด 25 FP/วัน</span>
+      </div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;line-height:2;color:var(--text-dim)">
+        ⚠️ Calories &gt;130% ของเป้า → <strong style="color:var(--red)">−5 FP</strong><br>
+        ⚠️ Calories &gt;150% ของเป้า → <strong style="color:var(--red)">−10 FP</strong>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:8px"></div>
+</div><!-- /nutrition -->
+
 </div><!-- /app-content -->
 
 <!-- ─────────────────── BOTTOM NAV ─────────────────── -->
@@ -1058,7 +1202,8 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   <button class="nav-btn"        id="nav-daily"   onclick="showPage('daily')"><span class="ni">📋</span>Daily</button>
   <button class="nav-btn"        id="nav-shop"    onclick="showPage('shop')"><span class="ni">🏪</span>Shop</button>
   <button class="nav-btn"        id="nav-rank"    onclick="showPage('rank')"><span class="ni">🏆</span>Rank</button>
-  <button class="nav-btn"        id="nav-profile" onclick="showPage('profile')"><span class="ni">👤</span>Profile</button>
+  <button class="nav-btn"        id="nav-profile"   onclick="showPage('profile')"><span class="ni">👤</span>Profile</button>
+  <button class="nav-btn"        id="nav-nutrition" onclick="showPage('nutrition')"><span class="ni">🥗</span>Nutr</button>
 </nav>
 
 </div><!-- /main-layout -->
@@ -1135,7 +1280,12 @@ const ACHIEVEMENTS = [
   {id:'clean14',nm:'Clean Streak',        ds:'ไม่กิน Junk (free) 14 วัน', ic:'🥗',xp:300, ok:s=>s.cleanDays>=14},
   {id:'lv5',    nm:'Silver Rising',       ds:'ถึง Level 5',              ic:'🥈', xp:150, ok:s=>s.lv>=5},
   {id:'lv10',   nm:'Gold Lifter',         ds:'ถึง Level 10',             ic:'🥇', xp:300, ok:s=>s.lv>=10},
-  {id:'lv20',   nm:'Platinum Athlete',   ds:'ถึง Level 20',             ic:'💎', xp:800, ok:s=>s.lv>=20},
+  {id:'lv20',    nm:'Platinum Athlete',      ds:'ถึง Level 20',                        ic:'💎', xp:800,  ok:s=>s.lv>=20},
+  {id:'nut_pro7',   nm:'Protein Hunter',      ds:'Protein ถึงเป้า 7 วันติดกัน',        ic:'🥩', xp:200,  ok:s=>(s.nutProStreak||0)>=7,    prog:s=>`${Math.min(s.nutProStreak||0,7)}/7 วัน`},
+  {id:'nut_mac14',  nm:'Macro Master',         ds:'ทุก Macro ถึงเป้า 14 วันติดกัน',   ic:'🎯', xp:400,  ok:s=>(s.nutMacroStreak||0)>=14,  prog:s=>`${Math.min(s.nutMacroStreak||0,14)}/14 วัน`},
+  {id:'nut_cal30',  nm:'Nutrition Discipline', ds:'Calories ในช่วงเป้า 30 วันติดกัน', ic:'⚖️', xp:600,  ok:s=>(s.nutCalStreak||0)>=30,    prog:s=>`${Math.min(s.nutCalStreak||0,30)}/30 วัน`},
+  {id:'nut_log60',  nm:'Iron Chef',            ds:'บันทึกอาหาร 60 วันติดกัน',          ic:'👨‍🍳',xp:800,  ok:s=>(s.nutLogStreak||0)>=60,   prog:s=>`${Math.min(s.nutLogStreak||0,60)}/60 วัน`},
+  {id:'nut_perf10', nm:'Perfect Fuel',         ds:'Perfect Nutrition Day ครบ 10 ครั้ง', ic:'⭐', xp:1000, ok:s=>(s.nutPerfectCount||0)>=10, prog:s=>`${Math.min(s.nutPerfectCount||0,10)}/10 ครั้ง`},
 ];
 
 const WQ_POOL = [
@@ -1187,6 +1337,10 @@ function defState() {
     dqDate:null, dqIds:[], dqDone:[],
     lastHabit:null,
     monthlyFP:0, monthlyReset:null,
+    nutritionGoals:{cal:2500, pro:140, carb:300, fat:70},
+    meals:[],
+    nutLastReward:null,
+    nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
     ach:[],
     purchases:[],
     log:[]
@@ -1666,12 +1820,14 @@ function renderAch() {
   document.getElementById('achCount').textContent = (S.ach||[]).length;
   document.getElementById('achTotal').textContent = ACHIEVEMENTS.length;
   document.getElementById('achList').innerHTML = ACHIEVEMENTS.map(a => {
-    const ul = (S.ach||[]).includes(a.id);
+    const ul   = (S.ach||[]).includes(a.id);
+    const prog = (!ul && a.prog) ? a.prog(S) : null;
     return `<div class="ach-item ${ul?'ul':'lk'}">
       <div class="ach-ic">${a.ic}</div>
       <div class="ach-info">
         <div class="ach-nm">${a.nm} ${ul?'✅':'🔒'}</div>
         <div class="ach-ds">${a.ds}</div>
+        ${prog ? `<div style="font-size:10px;color:var(--purple-light);margin-top:2px">📊 ${prog}</div>` : ''}
       </div>
       <div class="ach-xp">+${a.xp} EXP</div>
     </div>`;
@@ -1877,10 +2033,11 @@ function showPage(p) {
   document.getElementById('page-'+p).classList.add('active');
   document.getElementById('nav-'+p).classList.add('active');
   document.getElementById('app-content').scrollTop = 0;
-  if(p==='shop')    renderShop();
-  if(p==='workout') { selDay(curDay); calcPreview(); }
-  if(p==='profile') { renderAch(); renderCharStats(); renderLog(); }
-  if(p==='rank')    renderRank();
+  if(p==='shop')      renderShop();
+  if(p==='workout')   { selDay(curDay); calcPreview(); }
+  if(p==='profile')   { renderAch(); renderCharStats(); renderLog(); }
+  if(p==='rank')      renderRank();
+  if(p==='nutrition') nutTab(nutCurTab);
 }
 
 // ════════════════════════════════════════════════
@@ -1894,6 +2051,384 @@ function toast(msg, type='gold') {
   el.className = `toast ${type} show`;
   clearTimeout(tTimer);
   tTimer = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════
+//  NUTRITION TRACKING
+// ════════════════════════════════════════════════
+
+let nutCurTab = 0, nutHistFlt = 'day', nutMealType = 'breakfast', nutEditId = null;
+
+function nutTab(n) {
+  nutCurTab = n;
+  nutEditId = null;
+  for(let i = 0; i < 5; i++) {
+    document.getElementById('nTab'+i).classList.toggle('active', i === n);
+    document.getElementById('nPage'+i).style.display = i === n ? '' : 'none';
+  }
+  if(n === 0) renderNutDash();
+  else if(n === 1) {
+    document.getElementById('nutFormTitle').textContent = '➕ บันทึกอาหารใหม่';
+    document.getElementById('nutSaveBtn').textContent   = '💾 บันทึกอาหาร';
+    document.getElementById('nutMealDate').value = td();
+    ['nutName','nutNotes'].forEach(id => document.getElementById(id).value = '');
+    ['nutCal','nutPro','nutCarb','nutFat'].forEach(id => document.getElementById(id).value = '');
+    selMealType('breakfast');
+  }
+  else if(n === 2) renderNutHist();
+  else if(n === 3) renderNutStat();
+  else if(n === 4) renderNutGoalsForm();
+}
+
+function getNutDay(date) {
+  return (S.meals||[]).filter(m => m.date === date).reduce(
+    (a, m) => ({cal:a.cal+(m.cal||0), pro:a.pro+(m.pro||0), carb:a.carb+(m.carb||0), fat:a.fat+(m.fat||0), count:a.count+1}),
+    {cal:0, pro:0, carb:0, fat:0, count:0}
+  );
+}
+
+function nutBarHTML(val, goal, label, unit) {
+  const rawPct = goal > 0 ? Math.round((val / goal) * 100) : 0;
+  const barW   = Math.min(rawPct, 100);
+  const cls    = rawPct < 80 ? 'ok' : rawPct <= 100 ? 'good' : rawPct <= 120 ? 'warn' : 'over';
+  return `<div class="macro-bar-wrap">
+    <div class="macro-label">
+      <span class="lbl">${label}</span>
+      <span class="val">${val}${unit} / ${goal}${unit} <span style="color:var(--text-dim)">(${rawPct}%)</span></span>
+    </div>
+    <div class="macro-bar"><div class="macro-fill ${cls}" style="width:${barW}%"></div></div>
+  </div>`;
+}
+
+function renderNutDash() {
+  const today  = td();
+  const g      = S.nutritionGoals || {cal:2500, pro:140, carb:300, fat:70};
+  const day    = getNutDay(today);
+  const calPct = g.cal > 0 ? (day.cal / g.cal) * 100 : 0;
+  const proOk    = day.pro  >= g.pro;
+  const calOk    = calPct >= 90 && calPct <= 110;
+  const carbOk   = day.carb <= g.carb * 1.2 && day.carb >= g.carb * 0.5;
+  const fatOk    = day.fat  <= g.fat  * 1.2;
+  const allMacro   = proOk && calOk && carbOk && fatOk;
+  const perfectDay = allMacro && day.count > 0;
+  const claimed    = S.nutLastReward === today;
+
+  let fp = 0;
+  if(day.count > 0) {
+    if(proOk)    fp += 5;
+    if(calOk)    fp += 5;
+    if(allMacro) fp += 5;
+    if(perfectDay) fp += 10;
+  }
+  let pen = 0;
+  if(calPct > 150) pen = -10;
+  else if(calPct > 130) pen = -5;
+
+  const canClaim = (fp > 0 || pen < 0) && !claimed;
+  const net = fp + pen;
+
+  document.getElementById('nutDashCard').innerHTML = `
+    <div class="card-title">📊 โภชนาการวันนี้</div>
+    ${nutBarHTML(day.cal,  g.cal,  '🔥 Calories', ' kcal')}
+    ${nutBarHTML(day.pro,  g.pro,  '🥩 Protein',  ' g')}
+    ${nutBarHTML(day.carb, g.carb, '🍚 Carbs',    ' g')}
+    ${nutBarHTML(day.fat,  g.fat,  '🫒 Fat',      ' g')}
+    ${canClaim ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text-dim)">Nutrition FP วันนี้</div>
+        <div style="font-size:20px;font-weight:800;color:${net>=0?'var(--gold)':'var(--red)'}">${net>=0?'+':''}${net} FP</div>
+      </div>
+      <button class="btn btn-gold" style="width:100%" onclick="claimNutRewards()">✅ Claim Nutrition FP</button>
+    </div>` : claimed ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.1);border-radius:10px;text-align:center;font-size:12px;color:var(--text-dim)">✅ Claim แล้ววันนี้</div>` : ''}`;
+
+  const typeNm = {breakfast:'🌅 เช้า', lunch:'☀️ เที่ยง', dinner:'🌙 เย็น', snack:'🍎 Snack'};
+  const typeOrd = ['breakfast','lunch','dinner','snack'];
+  const todayMeals = (S.meals||[]).filter(m => m.date === today)
+    .sort((a,b) => typeOrd.indexOf(a.type)-typeOrd.indexOf(b.type));
+  document.getElementById('nutTodayMeals').innerHTML = todayMeals.length === 0
+    ? `<div style="color:var(--text-dim);text-align:center;padding:16px;font-size:13px">ยังไม่มีบันทึกวันนี้<br><br>
+       <button class="btn btn-outline btn-sm" onclick="nutTab(1)">➕ บันทึกอาหาร</button></div>`
+    : todayMeals.map(m => `
+      <div class="meal-card">
+        <div class="meal-card-hd">
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${typeNm[m.type]||m.type}</div>
+            <div class="meal-card-nm">${m.name}</div>
+            <div class="meal-card-macro">${m.cal} kcal | P:${m.pro}g C:${m.carb}g F:${m.fat}g</div>
+            ${m.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px">${m.notes}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+            <button class="btn btn-outline btn-xs" onclick="editMealModal(${m.id})">✏️</button>
+            <button class="btn btn-outline btn-xs" style="color:var(--red);border-color:rgba(239,68,68,.4)" onclick="deleteMeal(${m.id})">🗑️</button>
+          </div>
+        </div>
+      </div>`).join('');
+}
+
+function selMealType(type) {
+  nutMealType = type;
+  ['breakfast','lunch','dinner','snack'].forEach(t =>
+    document.getElementById('mtype-'+t).classList.toggle('sel', t === type)
+  );
+}
+
+function saveMeal() {
+  const name = (document.getElementById('nutName').value || '').trim();
+  if(!name) { toast('กรุณากรอกชื่ออาหาร','red'); return; }
+  const date  = document.getElementById('nutMealDate').value || td();
+  const cal   = Math.round(parseFloat(document.getElementById('nutCal').value)  || 0);
+  const pro   = Math.round(parseFloat(document.getElementById('nutPro').value)  || 0);
+  const carb  = Math.round(parseFloat(document.getElementById('nutCarb').value) || 0);
+  const fat   = Math.round(parseFloat(document.getElementById('nutFat').value)  || 0);
+  const notes = (document.getElementById('nutNotes').value || '').trim();
+  if(!S.meals) S.meals = [];
+
+  if(nutEditId) {
+    const idx = S.meals.findIndex(m => m.id === nutEditId);
+    if(idx >= 0) S.meals[idx] = {...S.meals[idx], name, date, type:nutMealType, cal, pro, carb, fat, notes};
+    nutEditId = null;
+    toast('✅ แก้ไขสำเร็จ','green');
+  } else {
+    S.meals.push({id:Date.now(), date, type:nutMealType, name, cal, pro, carb, fat, notes});
+    toast('✅ บันทึกอาหารสำเร็จ','green');
+  }
+  save();
+  nutTab(0);
+}
+
+function deleteMeal(id, fromHist) {
+  if(!confirm('ลบรายการนี้?')) return;
+  S.meals = (S.meals||[]).filter(m => m.id !== id);
+  save();
+  if(fromHist) renderNutHist(); else renderNutDash();
+  toast('🗑️ ลบแล้ว','red');
+}
+
+function editMealModal(id) {
+  const m = (S.meals||[]).find(m => m.id === id);
+  if(!m) return;
+  nutTab(1);
+  nutEditId = id;
+  document.getElementById('nutFormTitle').textContent = '✏️ แก้ไขอาหาร';
+  document.getElementById('nutSaveBtn').textContent   = '💾 อัปเดตอาหาร';
+  document.getElementById('nutMealDate').value = m.date;
+  document.getElementById('nutName').value  = m.name;
+  document.getElementById('nutCal').value   = m.cal  || '';
+  document.getElementById('nutPro').value   = m.pro  || '';
+  document.getElementById('nutCarb').value  = m.carb || '';
+  document.getElementById('nutFat').value   = m.fat  || '';
+  document.getElementById('nutNotes').value = m.notes || '';
+  selMealType(m.type || 'breakfast');
+}
+
+function claimNutRewards() {
+  const today = td();
+  if(S.nutLastReward === today) { toast('Claim แล้ววันนี้','red'); return; }
+  const g   = S.nutritionGoals || {cal:2500, pro:140, carb:300, fat:70};
+  const day = getNutDay(today);
+  const calPct   = g.cal > 0 ? (day.cal / g.cal) * 100 : 0;
+  const proOk    = day.pro  >= g.pro;
+  const calOk    = calPct >= 90 && calPct <= 110;
+  const carbOk   = day.carb <= g.carb * 1.2 && day.carb >= g.carb * 0.5;
+  const fatOk    = day.fat  <= g.fat  * 1.2;
+  const allMacro   = proOk && calOk && carbOk && fatOk;
+  const perfectDay = allMacro && day.count > 0;
+
+  let fp = 0;
+  if(day.count > 0) {
+    if(proOk)    fp += 5;
+    if(calOk)    fp += 5;
+    if(allMacro) fp += 5;
+    if(perfectDay) fp += 10;
+  }
+  let pen = 0;
+  if(calPct > 150) pen = -10;
+  else if(calPct > 130) pen = -5;
+  const net = fp + pen;
+
+  // Streak continuity check
+  const wasConsec = S.nutLastReward === yd() || !S.nutLastReward;
+  if(!wasConsec) {
+    S.nutProStreak=0; S.nutMacroStreak=0; S.nutCalStreak=0; S.nutLogStreak=0;
+  }
+  if(!S.nutProStreak)    S.nutProStreak=0;
+  if(!S.nutMacroStreak)  S.nutMacroStreak=0;
+  if(!S.nutCalStreak)    S.nutCalStreak=0;
+  if(!S.nutLogStreak)    S.nutLogStreak=0;
+  if(!S.nutPerfectCount) S.nutPerfectCount=0;
+
+  if(day.count > 0) S.nutLogStreak++;   else S.nutLogStreak=0;
+  if(proOk)    S.nutProStreak++;        else S.nutProStreak=0;
+  if(allMacro) S.nutMacroStreak++;      else S.nutMacroStreak=0;
+  if(calOk)    S.nutCalStreak++;        else S.nutCalStreak=0;
+  if(perfectDay) S.nutPerfectCount++;
+
+  S.nutLastReward = today;
+
+  if(fp > 0)  { S.fp += fp; S.totalFP += fp; S.monthlyFP = (S.monthlyFP||0) + fp; }
+  if(pen < 0) { S.fp = Math.max(0, S.fp + pen); S.penalties++; }
+  if(net !== 0) addLog(`🥗 Nutrition: ${net>=0?'+':''}${net} FP`);
+
+  checkAch(); save(); updateHomeUI(); renderNutDash();
+  if(net > 0)      toast(`🥗 +${net} FP Nutrition!`,'green');
+  else if(net < 0) toast(`⚠️ Calorie Penalty ${net} FP`,'red');
+  else             toast('🥗 Logged (0 FP)','gold');
+}
+
+function nutHistFilter(f) {
+  nutHistFlt = f;
+  ['day','week','month'].forEach(x =>
+    document.getElementById('nflt-'+x).classList.toggle('sel', x === f)
+  );
+  renderNutHist();
+}
+
+function renderNutHist() {
+  const today = td();
+  const dates = [];
+  const count = nutHistFlt === 'day' ? 1 : nutHistFlt === 'week' ? 7 : 30;
+  for(let i = 0; i < count; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  const typeNm  = {breakfast:'🌅 เช้า', lunch:'☀️ เที่ยง', dinner:'🌙 เย็น', snack:'🍎 Snack'};
+  const typeOrd = ['breakfast','lunch','dinner','snack'];
+  let html = '', hasAny = false;
+  dates.forEach(date => {
+    const dm = (S.meals||[]).filter(m => m.date === date)
+      .sort((a,b) => typeOrd.indexOf(a.type)-typeOrd.indexOf(b.type));
+    if(!dm.length) return;
+    hasAny = true;
+    const tot = dm.reduce((a,m)=>({cal:a.cal+(m.cal||0),pro:a.pro+(m.pro||0),carb:a.carb+(m.carb||0),fat:a.fat+(m.fat||0)}),{cal:0,pro:0,carb:0,fat:0});
+    html += `<div class="nut-day-hd">${date===today?'📅 วันนี้':date} <small style="font-weight:400">&nbsp;${tot.cal} kcal | P:${tot.pro}g C:${tot.carb}g F:${tot.fat}g</small></div>`;
+    dm.forEach(m => {
+      html += `<div class="meal-card">
+        <div class="meal-card-hd">
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${typeNm[m.type]||m.type}</div>
+            <div class="meal-card-nm">${m.name}</div>
+            <div class="meal-card-macro">${m.cal} kcal | P:${m.pro}g C:${m.carb}g F:${m.fat}g</div>
+            ${m.notes?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px">${m.notes}</div>`:''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+            <button class="btn btn-outline btn-xs" onclick="editMealModal(${m.id})">✏️</button>
+            <button class="btn btn-outline btn-xs" style="color:var(--red);border-color:rgba(239,68,68,.4)" onclick="deleteMeal(${m.id},true)">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('nutHistList').innerHTML = hasAny ? html
+    : '<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px">ไม่มีข้อมูลในช่วงนี้</div>';
+}
+
+function renderNutStat() {
+  const g = S.nutritionGoals || {cal:2500, pro:140, carb:300, fat:70};
+  function dAgo(n) { const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().split('T')[0]; }
+  function avgRange(from, cnt) {
+    let sum={cal:0,pro:0,carb:0,fat:0,days:0};
+    for(let i=from; i<from+cnt; i++) {
+      const day=getNutDay(dAgo(i));
+      if(day.count>0){sum.cal+=day.cal;sum.pro+=day.pro;sum.carb+=day.carb;sum.fat+=day.fat;sum.days++;}
+    }
+    if(!sum.days) return {cal:0,pro:0,carb:0,fat:0};
+    return {cal:Math.round(sum.cal/sum.days),pro:Math.round(sum.pro/sum.days),carb:Math.round(sum.carb/sum.days),fat:Math.round(sum.fat/sum.days)};
+  }
+  const avg7  = avgRange(0,7);
+  const avg30 = avgRange(0,30);
+  const prev7 = avgRange(7,7);
+  function trend(cur,prev) {
+    if(!prev) return `<span style="color:var(--text-dim)">→</span>`;
+    const d=cur-prev;
+    if(Math.abs(d)<5) return `<span style="color:var(--text-dim)">→</span>`;
+    return d>0 ? `<span style="color:var(--red)">↑+${d}</span>` : `<span style="color:var(--green)">↓${d}</span>`;
+  }
+  const days7    = Array.from({length:7},(_,i)=>getNutDay(dAgo(6-i)));
+  const labels7  = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(6-i)); return (d.getMonth()+1)+'/'+(d.getDate()); });
+
+  document.getElementById('nutStatContent').innerHTML = `
+    <div class="card">
+      <div class="card-title">📈 เฉลี่ย 7 วัน vs 30 วัน</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tr style="color:var(--text-dim)"><th style="text-align:left;padding:4px 0">Macro</th><th style="text-align:right">7วัน</th><th style="text-align:right">30วัน</th><th style="text-align:right">เป้า</th><th style="text-align:right">Trend</th></tr>
+        <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0">🔥 Cal</td><td style="text-align:right;font-weight:700">${avg7.cal}</td><td style="text-align:right">${avg30.cal}</td><td style="text-align:right;color:var(--text-dim)">${g.cal}</td><td style="text-align:right">${trend(avg7.cal,prev7.cal)}</td></tr>
+        <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0">🥩 Pro</td><td style="text-align:right;font-weight:700">${avg7.pro}</td><td style="text-align:right">${avg30.pro}</td><td style="text-align:right;color:var(--text-dim)">${g.pro}</td><td style="text-align:right">${trend(avg7.pro,prev7.pro)}</td></tr>
+        <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0">🍚 Carb</td><td style="text-align:right;font-weight:700">${avg7.carb}</td><td style="text-align:right">${avg30.carb}</td><td style="text-align:right;color:var(--text-dim)">${g.carb}</td><td style="text-align:right">${trend(avg7.carb,prev7.carb)}</td></tr>
+        <tr style="border-top:1px solid var(--border)"><td style="padding:5px 0">🫒 Fat</td><td style="text-align:right;font-weight:700">${avg7.fat}</td><td style="text-align:right">${avg30.fat}</td><td style="text-align:right;color:var(--text-dim)">${g.fat}</td><td style="text-align:right">${trend(avg7.fat,prev7.fat)}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🔥 Calories — 7 วันที่ผ่านมา</div>
+      ${nutBarChartSVG(days7.map(d=>d.cal), labels7, g.cal)}
+    </div>
+    <div class="card">
+      <div class="card-title">🥩 Protein — 7 วันที่ผ่านมา</div>
+      ${nutBarChartSVG(days7.map(d=>d.pro), labels7, g.pro)}
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 Nutrition Streaks</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+        ${[
+          {ic:'📝',nm:'Log Streak',        v:S.nutLogStreak||0,   tgt:60},
+          {ic:'🥩',nm:'Protein Streak',    v:S.nutProStreak||0,   tgt:7},
+          {ic:'🎯',nm:'Macro Streak',      v:S.nutMacroStreak||0, tgt:14},
+          {ic:'⚖️',nm:'Calorie Streak',   v:S.nutCalStreak||0,   tgt:30},
+        ].map(x=>`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px">${x.ic}</div>
+          <div style="font-size:20px;font-weight:800;color:var(--gold)">${x.v}</div>
+          <div style="font-size:10px;color:var(--text-dim)">${x.nm}</div>
+          <div style="font-size:10px;color:var(--text-dim)">เป้า ${x.tgt} วัน</div>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:10px;text-align:center;padding:8px;background:rgba(255,215,0,.06);border-radius:8px">
+        <span style="font-size:11px;color:var(--text-dim)">⭐ Perfect Days</span>
+        <span style="font-size:22px;font-weight:800;color:var(--gold);margin-left:8px">${S.nutPerfectCount||0}</span>
+        <span style="font-size:11px;color:var(--text-dim)"> / 10 เป้าหมาย</span>
+      </div>
+    </div>`;
+}
+
+function nutBarChartSVG(values, labels, goal) {
+  const W=300, H=100, PAD=22, BW=30, GAP=6;
+  const max  = Math.max(...values, goal*1.1, 1);
+  const n    = values.length;
+  const totW = n*(BW+GAP)-GAP;
+  const offX = (W-totW)/2;
+  const goalY = PAD + (H-PAD*2)*(1-goal/max);
+  let bars = '';
+  values.forEach((v,i) => {
+    const bH  = Math.max(2,(H-PAD*2)*(v/max));
+    const x   = offX+i*(BW+GAP);
+    const y   = H-PAD-bH;
+    const pct = goal>0?(v/goal)*100:0;
+    const col = pct<80?'#3b82f6':pct<=110?'#22c55e':pct<=130?'#f97316':'#ef4444';
+    bars += `<rect x="${x}" y="${y}" width="${BW}" height="${bH}" rx="3" fill="${col}" opacity="${v?'1':'.15'}"/>`;
+    bars += `<text x="${x+BW/2}" y="${H-4}" text-anchor="middle" font-size="9" fill="#64748b">${labels[i]}</text>`;
+    if(v>0) bars += `<text x="${x+BW/2}" y="${Math.max(y-3,10)}" text-anchor="middle" font-size="9" fill="#e2e8f0">${v}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
+    <line x1="0" y1="${goalY}" x2="${W}" y2="${goalY}" stroke="#ffd700" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+    <text x="${W-2}" y="${goalY-3}" text-anchor="end" font-size="9" fill="#a8860c">Goal</text>
+    ${bars}
+  </svg>`;
+}
+
+function saveNutGoals() {
+  const cal  = parseInt(document.getElementById('gCal').value)  || 2500;
+  const pro  = parseInt(document.getElementById('gPro').value)  || 140;
+  const carb = parseInt(document.getElementById('gCarb').value) || 300;
+  const fat  = parseInt(document.getElementById('gFat').value)  || 70;
+  S.nutritionGoals = {cal, pro, carb, fat};
+  save();
+  toast('💾 บันทึกเป้าหมายสำเร็จ','green');
+}
+
+function renderNutGoalsForm() {
+  const g = S.nutritionGoals || {cal:2500, pro:140, carb:300, fat:70};
+  document.getElementById('gCal').value  = g.cal;
+  document.getElementById('gPro').value  = g.pro;
+  document.getElementById('gCarb').value = g.carb;
+  document.getElementById('gFat').value  = g.fat;
 }
 
 // ════════════════════════════════════════════════
