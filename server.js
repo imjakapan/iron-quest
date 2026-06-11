@@ -79,7 +79,7 @@ function defState() {
     lastWOTypes:{}, wkRestDate:null, wkRestDates:[],
     lastHabit:null, monthlyFP:0, monthlyReset:null,
     nutritionGoals:{cal:2500,pro:140,carb:300,fat:70},
-    meals:[],
+    meals:[], mealTemplates:[],
     nutLastReward:null,
     nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
     ach:[], purchases:[], log:[]

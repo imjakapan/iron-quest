@@ -638,6 +638,10 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
 .nut-flt-btn.sel { border-color:var(--purple); color:var(--purple-light); background:rgba(124,58,237,.1); }
 .nut-day-hd { font-size:12px; font-weight:700; color:var(--text-dim); margin:10px 0 6px; padding-bottom:4px; border-bottom:1px solid var(--border); }
 .nut-field { width:100%; padding:8px 10px; background:var(--bg-card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; }
+.nut-tmpl-chip { display:inline-flex; align-items:center; gap:4px; background:var(--bg-card2); border:1px solid var(--border); border-radius:16px; padding:5px 8px 5px 10px; cursor:pointer; font-size:11px; transition:border-color .2s; white-space:nowrap; }
+.nut-tmpl-chip:hover { border-color:var(--gold); }
+.nut-tmpl-chip .del { color:var(--text-dim); padding:0 3px; cursor:pointer; font-size:13px; line-height:1; }
+.nut-tmpl-chip .del:hover { color:var(--red); }
 </style>
 </head>
 <body>
@@ -851,6 +855,13 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
     <div class="day-btn"        id="btnLeg"    onclick="selDay('leg')"><span class="day-em">🦵</span>LEG</div>
     <div class="day-btn"        id="btnCustom" onclick="selDay('custom')"><span class="day-em">🏋️</span>FULL BODY</div>
     <div class="day-btn"        id="btnRun"    onclick="selDay('run')"><span class="day-em">🏃</span>RUN</div>
+  </div>
+
+  <!-- Backdate selector -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <span style="font-size:11px;color:var(--text-dim)">📅 บันทึกวัน:</span>
+    <button class="btn btn-outline btn-xs" id="woBkToday" onclick="selWoDate('today')" style="border-color:var(--gold);color:var(--gold)">วันนี้</button>
+    <button class="btn btn-outline btn-xs" id="woBkYest"  onclick="selWoDate('yest')">เมื่อวาน</button>
   </div>
 
   <!-- ─ Responsive row: Exercise list LEFT | Options RIGHT ─ -->
@@ -1102,17 +1113,32 @@ select { width:100%; appearance:none; background-image:url("data:image/svg+xml,%
   <div id="nPage1" style="display:none">
     <div class="card">
       <div class="card-title" id="nutFormTitle">➕ บันทึกอาหารใหม่</div>
+
+      <!-- Saved templates -->
+      <div id="nutTmplSection" style="display:none;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">📖 เมนูที่บันทึกไว้ (กดเพื่อเลือก)</div>
+        <div id="nutTmplList" style="display:flex;flex-wrap:wrap;gap:6px;max-height:108px;overflow-y:auto"></div>
+      </div>
+
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">ประเภทมื้อ</div>
       <div class="meal-type-tabs">
         <button class="mt-btn sel" id="mtype-breakfast" onclick="selMealType('breakfast')">🌅 เช้า</button>
         <button class="mt-btn"     id="mtype-lunch"     onclick="selMealType('lunch')">☀️ เที่ยง</button>
         <button class="mt-btn"     id="mtype-dinner"    onclick="selMealType('dinner')">🌙 เย็น</button>
-        <button class="mt-btn"     id="mtype-snack"     onclick="selMealType('snack')">🍎 Snack</button>
+        <button class="mt-btn"     id="mtype-snack"     onclick="selMealType('snack')">🍎 Snack <span style="font-size:9px;color:var(--text-dim)">(บันทึกได้หลายครั้ง)</span></button>
       </div>
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">วันที่</div>
       <input type="date" id="nutMealDate" class="nut-field" style="margin-bottom:12px">
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">ชื่ออาหาร *</div>
-      <input type="text" id="nutName" class="nut-field" placeholder="เช่น ข้าวสวย, ไก่ย่าง" style="margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 72px;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">ชื่ออาหาร *</div>
+          <input type="text" id="nutName" class="nut-field" placeholder="เช่น ข้าวสวย, ไก่ย่าง">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">จำนวน</div>
+          <input type="number" id="nutQty" class="nut-field" value="1" min="0.5" step="0.5">
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">🔥 Calories (kcal)</div>
@@ -1338,7 +1364,7 @@ function defState() {
     lastHabit:null,
     monthlyFP:0, monthlyReset:null,
     nutritionGoals:{cal:2500, pro:140, carb:300, fat:70},
-    meals:[],
+    meals:[], mealTemplates:[],
     nutLastReward:null,
     nutProStreak:0, nutMacroStreak:0, nutCalStreak:0, nutLogStreak:0, nutPerfectCount:0,
     ach:[],
@@ -1370,6 +1396,18 @@ function save() {
 let curDay = 'push';
 let setCounts = {};
 let selectedRunKm = 0;
+let woBkDate = 'today';
+
+function selWoDate(v) {
+  woBkDate = v;
+  ['woBkToday','woBkYest'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const on = (id==='woBkToday' && v==='today') || (id==='woBkYest' && v==='yest');
+    el.style.borderColor = on ? 'var(--gold)' : 'var(--border)';
+    el.style.color       = on ? 'var(--gold)' : 'var(--text-dim)';
+  });
+}
 
 function selDay(d) {
   curDay = d;
@@ -1500,10 +1538,17 @@ function calcPreview() {
 function logWorkout() {
   const c = calcFP();
   if(c.base === 0) { toast(curDay==='run' ? 'เลือกระยะทางก่อนนะ! 🏃' : 'เพิ่ม sets ก่อนนะ! 💪','red'); return; }
-  const today = td();
+
+  const today      = td();
+  const yest       = yd();
+  const isBackdate = woBkDate === 'yest';
+  const logDate    = isBackdate ? yest : today;
+
   if(!S.lastWOTypes) S.lastWOTypes = {};
   const typeNm = {push:'PUSH',pull:'PULL',leg:'LEG',custom:'FULL BODY',run:'RUNNING'}[curDay];
-  if(S.lastWOTypes[curDay] === today) { toast(`บันทึก ${typeNm} วันนี้แล้ว! 🔄`,'red'); return; }
+  if(S.lastWOTypes[curDay] === logDate) {
+    toast(`บันทึก ${typeNm} ${isBackdate?'เมื่อวาน':'วันนี้'}แล้ว! 🔄`,'red'); return;
+  }
 
   const fpG = c.total;
   const xpG = 100 + (c.pr ? 150 : 0);
@@ -1512,20 +1557,35 @@ function logWorkout() {
   addExp(xpG);
   S.wo++;
   if(c.pr) S.prs++;
-  if(c.card) { weekCheck(); S.wkCardio++; }
-  if(curDay === 'run') { weekCheck(); S.wkCardio++; } // running = cardio
 
-  // streak
-  const yest = yd();
-  if(S.lastWO === yest) S.streak++;
-  else if(S.lastWO !== today) S.streak = 1;
-  S.lastWO = today;
+  // Streak logic
+  if(isBackdate) {
+    if(S.lastWO !== today && S.lastWO !== yest) {
+      // nothing logged today or yesterday yet → start/continue from yesterday
+      const twoDaysAgo = (()=>{ const d=new Date(); d.setDate(d.getDate()-2); return d.toISOString().split('T')[0]; })();
+      S.streak = (S.lastWO === twoDaysAgo) ? S.streak + 1 : 1;
+      S.lastWO = yest;
+    }
+    // if today already logged (lastWO===today): don't touch streak/lastWO
+    // if yesterday already logged (lastWO===yest): same-day multi-type, no change
+  } else {
+    if(S.lastWO === yest) S.streak++;
+    else if(S.lastWO !== today) S.streak = 1;
+    S.lastWO = today;
+  }
 
-  S.lastWOTypes[curDay] = today;  // ป้องกัน log ซ้ำ type เดิมวันเดียวกัน
+  S.lastWOTypes[curDay] = logDate;
+
+  // Weekly stats (only if logDate is within current week)
   weekCheck();
-  S.wkWO++;
-  S.wkPR += c.pr ? 1 : 0;
-  if(!S.wkLog.includes(today)) S.wkLog.push(today);
+  if(!S.wkStart || logDate >= S.wkStart) {
+    S.wkWO++;
+    S.wkPR += c.pr ? 1 : 0;
+    if(!S.wkLog.includes(logDate)) S.wkLog.push(logDate);
+  }
+  if(c.card || curDay === 'run') {
+    if(!S.wkStart || logDate >= S.wkStart) S.wkCardio++;
+  }
 
   // streak milestone bonuses
   let sBonus = 0;
@@ -1534,12 +1594,13 @@ function logWorkout() {
   if(S.streak === 30) { sBonus = 300; addExp(500); toast('🔥 30-Day Streak LEGEND!','purple'); }
   if(sBonus) { S.fp += sBonus; S.totalFP += sBonus; S.monthlyFP = (S.monthlyFP||0) + sBonus; }
 
-  const dayLabel = typeNm;
+  const bkLabel  = isBackdate ? ' (เมื่อวาน)' : '';
   const runDist  = curDay==='run' ? RUN_DISTANCES.find(x=>x.km===selectedRunKm) : null;
   addLog(curDay==='run'
-    ? `🏃 RUNNING ${runDist?.label||''} — +${fpG} FP (+${xpG} EXP)`
-    : `💪 ${dayLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
+    ? `🏃 RUNNING${bkLabel} ${runDist?.label||''} — +${fpG} FP (+${xpG} EXP)`
+    : `💪 ${typeNm}${bkLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
   checkAch(); checkWQ();
+  selWoDate('today'); // reset to today after logging
   save(); updateUI();
 
   // modal
@@ -2071,9 +2132,11 @@ function nutTab(n) {
     document.getElementById('nutFormTitle').textContent = '➕ บันทึกอาหารใหม่';
     document.getElementById('nutSaveBtn').textContent   = '💾 บันทึกอาหาร';
     document.getElementById('nutMealDate').value = td();
+    document.getElementById('nutQty').value = '1';
     ['nutName','nutNotes'].forEach(id => document.getElementById(id).value = '');
     ['nutCal','nutPro','nutCarb','nutFat'].forEach(id => document.getElementById(id).value = '');
     selMealType('breakfast');
+    renderTmplList();
   }
   else if(n === 2) renderNutHist();
   else if(n === 3) renderNutStat();
@@ -2082,9 +2145,33 @@ function nutTab(n) {
 
 function getNutDay(date) {
   return (S.meals||[]).filter(m => m.date === date).reduce(
-    (a, m) => ({cal:a.cal+(m.cal||0), pro:a.pro+(m.pro||0), carb:a.carb+(m.carb||0), fat:a.fat+(m.fat||0), count:a.count+1}),
+    (a, m) => {
+      const q = m.qty || 1;
+      return {cal:a.cal+Math.round((m.cal||0)*q), pro:a.pro+Math.round((m.pro||0)*q), carb:a.carb+Math.round((m.carb||0)*q), fat:a.fat+Math.round((m.fat||0)*q), count:a.count+1};
+    },
     {cal:0, pro:0, carb:0, fat:0, count:0}
   );
+}
+
+function mealCardHTML(m, deleteCall) {
+  const q   = m.qty || 1;
+  const eff = {cal:Math.round((m.cal||0)*q), pro:Math.round((m.pro||0)*q), carb:Math.round((m.carb||0)*q), fat:Math.round((m.fat||0)*q)};
+  const qStr = q !== 1 ? ` <span style="color:var(--text-dim)">×${q}</span>` : '';
+  const typeNm = {breakfast:'🌅 เช้า', lunch:'☀️ เที่ยง', dinner:'🌙 เย็น', snack:'🍎 Snack'};
+  return `<div class="meal-card">
+    <div class="meal-card-hd">
+      <div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${typeNm[m.type]||m.type}</div>
+        <div class="meal-card-nm">${m.name}${qStr}</div>
+        <div class="meal-card-macro">${eff.cal} kcal | P:${eff.pro}g C:${eff.carb}g F:${eff.fat}g</div>
+        ${m.notes?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px">${m.notes}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+        <button class="btn btn-outline btn-xs" onclick="editMealModal(${m.id})">✏️</button>
+        <button class="btn btn-outline btn-xs" style="color:var(--red);border-color:rgba(239,68,68,.4)" onclick="${deleteCall}">🗑️</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function nutBarHTML(val, goal, label, unit) {
@@ -2141,28 +2228,13 @@ function renderNutDash() {
       <button class="btn btn-gold" style="width:100%" onclick="claimNutRewards()">✅ Claim Nutrition FP</button>
     </div>` : claimed ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.1);border-radius:10px;text-align:center;font-size:12px;color:var(--text-dim)">✅ Claim แล้ววันนี้</div>` : ''}`;
 
-  const typeNm = {breakfast:'🌅 เช้า', lunch:'☀️ เที่ยง', dinner:'🌙 เย็น', snack:'🍎 Snack'};
   const typeOrd = ['breakfast','lunch','dinner','snack'];
   const todayMeals = (S.meals||[]).filter(m => m.date === today)
     .sort((a,b) => typeOrd.indexOf(a.type)-typeOrd.indexOf(b.type));
   document.getElementById('nutTodayMeals').innerHTML = todayMeals.length === 0
     ? `<div style="color:var(--text-dim);text-align:center;padding:16px;font-size:13px">ยังไม่มีบันทึกวันนี้<br><br>
        <button class="btn btn-outline btn-sm" onclick="nutTab(1)">➕ บันทึกอาหาร</button></div>`
-    : todayMeals.map(m => `
-      <div class="meal-card">
-        <div class="meal-card-hd">
-          <div>
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${typeNm[m.type]||m.type}</div>
-            <div class="meal-card-nm">${m.name}</div>
-            <div class="meal-card-macro">${m.cal} kcal | P:${m.pro}g C:${m.carb}g F:${m.fat}g</div>
-            ${m.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px">${m.notes}</div>` : ''}
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
-            <button class="btn btn-outline btn-xs" onclick="editMealModal(${m.id})">✏️</button>
-            <button class="btn btn-outline btn-xs" style="color:var(--red);border-color:rgba(239,68,68,.4)" onclick="deleteMeal(${m.id})">🗑️</button>
-          </div>
-        </div>
-      </div>`).join('');
+    : todayMeals.map(m => mealCardHTML(m, `deleteMeal(${m.id})`)).join('');
 }
 
 function selMealType(type) {
@@ -2176,6 +2248,7 @@ function saveMeal() {
   const name = (document.getElementById('nutName').value || '').trim();
   if(!name) { toast('กรุณากรอกชื่ออาหาร','red'); return; }
   const date  = document.getElementById('nutMealDate').value || td();
+  const qty   = Math.max(0.5, parseFloat(document.getElementById('nutQty').value) || 1);
   const cal   = Math.round(parseFloat(document.getElementById('nutCal').value)  || 0);
   const pro   = Math.round(parseFloat(document.getElementById('nutPro').value)  || 0);
   const carb  = Math.round(parseFloat(document.getElementById('nutCarb').value) || 0);
@@ -2185,13 +2258,21 @@ function saveMeal() {
 
   if(nutEditId) {
     const idx = S.meals.findIndex(m => m.id === nutEditId);
-    if(idx >= 0) S.meals[idx] = {...S.meals[idx], name, date, type:nutMealType, cal, pro, carb, fat, notes};
+    if(idx >= 0) S.meals[idx] = {...S.meals[idx], name, date, type:nutMealType, qty, cal, pro, carb, fat, notes};
     nutEditId = null;
     toast('✅ แก้ไขสำเร็จ','green');
   } else {
-    S.meals.push({id:Date.now(), date, type:nutMealType, name, cal, pro, carb, fat, notes});
+    S.meals.push({id:Date.now(), date, type:nutMealType, name, qty, cal, pro, carb, fat, notes});
     toast('✅ บันทึกอาหารสำเร็จ','green');
   }
+
+  // Auto-save template (upsert by name)
+  if(!S.mealTemplates) S.mealTemplates = [];
+  const tmpl = {name, cal, pro, carb, fat};
+  const ti = S.mealTemplates.findIndex(t => t.name.toLowerCase() === name.toLowerCase());
+  if(ti >= 0) S.mealTemplates[ti] = tmpl;
+  else { S.mealTemplates.unshift(tmpl); if(S.mealTemplates.length > 30) S.mealTemplates.pop(); }
+
   save();
   nutTab(0);
 }
@@ -2204,6 +2285,38 @@ function deleteMeal(id, fromHist) {
   toast('🗑️ ลบแล้ว','red');
 }
 
+function renderTmplList() {
+  const sec  = document.getElementById('nutTmplSection');
+  const list = document.getElementById('nutTmplList');
+  if(!sec || !list) return;
+  const tmpls = S.mealTemplates || [];
+  sec.style.display = tmpls.length ? '' : 'none';
+  list.innerHTML = tmpls.map((t, i) =>
+    `<button class="nut-tmpl-chip" onclick="pickTemplate(${i})">
+      <span>${t.name}</span>
+      <span style="color:var(--text-dim)">&nbsp;${t.cal}kcal</span>
+      <span class="del" onclick="event.stopPropagation();deleteTemplate(${i})">×</span>
+    </button>`
+  ).join('');
+}
+
+function pickTemplate(i) {
+  const t = (S.mealTemplates||[])[i];
+  if(!t) return;
+  document.getElementById('nutName').value  = t.name;
+  document.getElementById('nutCal').value   = t.cal  || '';
+  document.getElementById('nutPro').value   = t.pro  || '';
+  document.getElementById('nutCarb').value  = t.carb || '';
+  document.getElementById('nutFat').value   = t.fat  || '';
+  document.getElementById('nutQty').value   = '1';
+}
+
+function deleteTemplate(i) {
+  if(!S.mealTemplates) return;
+  S.mealTemplates.splice(i, 1);
+  save(); renderTmplList();
+}
+
 function editMealModal(id) {
   const m = (S.meals||[]).find(m => m.id === id);
   if(!m) return;
@@ -2213,12 +2326,14 @@ function editMealModal(id) {
   document.getElementById('nutSaveBtn').textContent   = '💾 อัปเดตอาหาร';
   document.getElementById('nutMealDate').value = m.date;
   document.getElementById('nutName').value  = m.name;
+  document.getElementById('nutQty').value   = m.qty  || 1;
   document.getElementById('nutCal').value   = m.cal  || '';
   document.getElementById('nutPro').value   = m.pro  || '';
   document.getElementById('nutCarb').value  = m.carb || '';
   document.getElementById('nutFat').value   = m.fat  || '';
   document.getElementById('nutNotes').value = m.notes || '';
   selMealType(m.type || 'breakfast');
+  renderTmplList();
 }
 
 function claimNutRewards() {
@@ -2291,7 +2406,6 @@ function renderNutHist() {
     const d = new Date(); d.setDate(d.getDate()-i);
     dates.push(d.toISOString().split('T')[0]);
   }
-  const typeNm  = {breakfast:'🌅 เช้า', lunch:'☀️ เที่ยง', dinner:'🌙 เย็น', snack:'🍎 Snack'};
   const typeOrd = ['breakfast','lunch','dinner','snack'];
   let html = '', hasAny = false;
   dates.forEach(date => {
@@ -2299,24 +2413,9 @@ function renderNutHist() {
       .sort((a,b) => typeOrd.indexOf(a.type)-typeOrd.indexOf(b.type));
     if(!dm.length) return;
     hasAny = true;
-    const tot = dm.reduce((a,m)=>({cal:a.cal+(m.cal||0),pro:a.pro+(m.pro||0),carb:a.carb+(m.carb||0),fat:a.fat+(m.fat||0)}),{cal:0,pro:0,carb:0,fat:0});
-    html += `<div class="nut-day-hd">${date===today?'📅 วันนี้':date} <small style="font-weight:400">&nbsp;${tot.cal} kcal | P:${tot.pro}g C:${tot.carb}g F:${tot.fat}g</small></div>`;
-    dm.forEach(m => {
-      html += `<div class="meal-card">
-        <div class="meal-card-hd">
-          <div>
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${typeNm[m.type]||m.type}</div>
-            <div class="meal-card-nm">${m.name}</div>
-            <div class="meal-card-macro">${m.cal} kcal | P:${m.pro}g C:${m.carb}g F:${m.fat}g</div>
-            ${m.notes?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px">${m.notes}</div>`:''}
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
-            <button class="btn btn-outline btn-xs" onclick="editMealModal(${m.id})">✏️</button>
-            <button class="btn btn-outline btn-xs" style="color:var(--red);border-color:rgba(239,68,68,.4)" onclick="deleteMeal(${m.id},true)">🗑️</button>
-          </div>
-        </div>
-      </div>`;
-    });
+    const day = getNutDay(date);
+    html += `<div class="nut-day-hd">${date===today?'📅 วันนี้':date} <small style="font-weight:400">&nbsp;${day.cal} kcal | P:${day.pro}g C:${day.carb}g F:${day.fat}g</small></div>`;
+    dm.forEach(m => { html += mealCardHTML(m, `deleteMeal(${m.id},true)`); });
   });
   document.getElementById('nutHistList').innerHTML = hasAny ? html
     : '<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px">ไม่มีข้อมูลในช่วงนี้</div>';
