@@ -1458,6 +1458,7 @@ let S = defState();
 let currentUser = null, currentPIN = null;
 let _saveTimer = null;
 let wCurTab = 0, stCurTab = 0, strSelEx = '', strChartMetric = 'weight', strChartPeriod = 90;
+let _strAfterWODate = '', _strAfterWOExList = [];
 
 function save() {
   if (!currentUser || !currentPIN) return;
@@ -1682,6 +1683,7 @@ function logWorkout() {
     ? `🏃 RUNNING${bkLabel} ${runDist?.label||''} — +${fpG} FP (+${xpG} EXP)`
     : `💪 ${typeNm}${bkLabel} Workout — +${fpG} FP (+${xpG} EXP)`);
   checkAch(); checkWQ();
+  _strAfterWODate = logDate; // capture before reset (used by strength popup)
   selWoDate('today'); // reset to today after logging
   save(); updateUI();
 
@@ -1717,7 +1719,10 @@ function logWorkout() {
         ${sBonus ? `<div class="ir"><span class="lbl">Streak Bonus 🔥</span><span class="val" style="color:var(--orange)">+${sBonus}</span></div>` : ''}
         <div class="ir"><span class="lbl">EXP Gained</span><span class="val" style="color:var(--purple-light)">+${xpG}</span></div>
       </div>
-      <button class="btn btn-gold" onclick="closeModal()">Accept! ⚔️</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-gold" style="flex:1" onclick="showStrAfterWorkout()">💪 + Strength</button>
+        <button class="btn btn-outline" style="width:auto;flex:0 0 auto" onclick="closeModal()">ข้าม</button>
+      </div>
     `);
   }
 }
@@ -2552,6 +2557,124 @@ function strLineChart(logs, metric) {
     <polyline points="${pts}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     ${dots}${xLbls}
   </svg>`;
+}
+
+function showStrAfterWorkout() {
+  closeModal();
+  const day = curDay;
+  if(day === 'run') return;
+
+  // S + A tier exercises for the logged day
+  _strAfterWOExList = (EXDB[day]||[]).filter(e => e.t==='S' || e.t==='A');
+  if(!_strAfterWOExList.length) return;
+
+  const rows = _strAfterWOExList.map((ex, i) => {
+    const logs = getStrExLogs(ex.n);
+    const last = logs[logs.length-1];
+    const hint = last ? `ล่าสุด: ${last.weight}kg×${last.reps}×${last.sets}` : '';
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:700">${ex.n}</span>
+        <span style="font-size:10px;color:var(--text-dim)">${hint}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <input type="number" id="sw_w_${i}" class="nut-field" placeholder="kg"   step="0.5" min="0" style="padding:6px 8px;font-size:12px" value="${last?.weight||''}">
+        <input type="number" id="sw_r_${i}" class="nut-field" placeholder="reps" min="1"   style="padding:6px 8px;font-size:12px" value="${last?.reps||''}">
+        <input type="number" id="sw_s_${i}" class="nut-field" placeholder="sets" min="1"   style="padding:6px 8px;font-size:12px" value="${last?.sets||''}">
+      </div>
+    </div>`;
+  }).join('');
+
+  showModal(`
+    <div class="m-em">💪</div>
+    <div class="m-ttl">บันทึก Strength วันนี้?</div>
+    <div class="m-sub" style="margin-bottom:14px">กรอกเฉพาะท่าที่ต้องการ — ข้ามได้เลย<br><small style="font-size:10px;color:var(--text-dim)">kg | reps | sets — Pre-filled จากครั้งล่าสุด</small></div>
+    <div style="max-height:55vh;overflow-y:auto;text-align:left;margin-bottom:14px">${rows}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gold" style="flex:1" onclick="saveStrFromWorkout()">💾 บันทึก</button>
+      <button class="btn btn-outline" style="width:auto;flex:0 0 auto" onclick="closeModal()">ข้าม</button>
+    </div>
+  `);
+}
+
+function saveStrFromWorkout() {
+  const logDate = _strAfterWODate || td();
+  if(!S.strengthLog) S.strengthLog = [];
+  if(!S.strengthPRs) S.strengthPRs = {};
+
+  let saved = 0, totalFP = 0, prLines = [];
+
+  _strAfterWOExList.forEach((ex, i) => {
+    const w = parseFloat(document.getElementById('sw_w_'+i)?.value)||0;
+    const r = parseInt(document.getElementById('sw_r_'+i)?.value)||0;
+    const s = parseInt(document.getElementById('sw_s_'+i)?.value)||1;
+    if(!w || !r) return;
+
+    const volume = Math.round(w*r*s);
+    const oneRM  = calc1RM(w, r);
+    const pr = S.strengthPRs[ex.n] || {bestWeight:0,bestReps:0,bestVolume:0,best1RM:0,lastProgressDate:null,sessions:0};
+    const prevLogs = getStrExLogs(ex.n).filter(e=>e.date<logDate);
+    const lastLog  = prevLogs.length ? prevLogs[prevLogs.length-1] : null;
+
+    const isWeightPR = w > pr.bestWeight;
+    const isRepsPR   = r > pr.bestReps;
+    const isVolumePR = volume > pr.bestVolume;
+    const is1RMPR    = oneRM > pr.best1RM;
+    const isAnyPR    = isWeightPR||isRepsPR||isVolumePR||is1RMPR;
+
+    let progType = null;
+    if(lastLog) {
+      if(w > lastLog.weight) progType = 'weight';
+      else if(w >= lastLog.weight && r > lastLog.reps) progType = 'reps';
+    } else progType = 'first';
+
+    const madeProg = progType !== null;
+    const platDays = pr.lastProgressDate ? daysDiff(pr.lastProgressDate, logDate) : 0;
+    const isBreakPlat = madeProg && platDays > 28;
+
+    S.strengthLog.push({id:Date.now()+i, date:logDate, exercise:ex.n, weight:w, reps:r, sets:s, volume, oneRM, progress:progType});
+    pr.sessions = (pr.sessions||0)+1;
+    if(w>pr.bestWeight) pr.bestWeight=w;
+    if(r>pr.bestReps)   pr.bestReps=r;
+    if(volume>pr.bestVolume) pr.bestVolume=volume;
+    if(oneRM>pr.best1RM)     pr.best1RM=oneRM;
+    if(madeProg) pr.lastProgressDate=logDate;
+    S.strengthPRs[ex.n]=pr;
+
+    let fp=0;
+    if(progType==='weight') fp+=5;
+    if(progType==='reps')   fp+=3;
+    if(isAnyPR)             fp+=10;
+    if(isBreakPlat)         fp+=15;
+    if(fp>0) {
+      S.fp+=fp; S.totalFP+=fp; S.monthlyFP=(S.monthlyFP||0)+fp;
+      addLog(`💪 Strength${isAnyPR?' PR':''} [${ex.n}] ${w}kg×${r}×${s} +${fp}FP`);
+      totalFP+=fp;
+    }
+    if(isAnyPR) {
+      const tags=[isWeightPR?'Weight':null,isRepsPR?'Reps':null,isVolumePR?'Volume':null,is1RMPR?'1RM':null].filter(Boolean);
+      prLines.push(`<div class="ir"><span class="lbl">🏆 ${ex.n}</span><span class="val" style="color:var(--gold)">${tags.join(' · ')} PR</span></div>`);
+    }
+    saved++;
+  });
+
+  save(); updateHomeUI();
+  closeModal();
+
+  if(!saved) { toast('ไม่มีข้อมูล — ข้ามไปแล้ว','gold'); return; }
+
+  if(prLines.length>0) {
+    showModal(`
+      <div class="m-em">🏆</div>
+      <div class="m-ttl" style="color:var(--gold)">PR ใหม่! ${prLines.length} ท่า</div>
+      <div class="m-sub">บันทึก ${saved} ท่า</div>
+      <div class="m-fp">+${totalFP} FP</div>
+      <div style="text-align:left;margin-bottom:16px">${prLines.join('')}</div>
+      <button class="btn btn-gold" onclick="closeModal()">Accept! ⚔️</button>
+    `);
+  } else {
+    toast(`✅ บันทึก Strength ${saved} ท่า${totalFP>0?' +'+totalFP+' FP':''}`, 'green');
+  }
 }
 
 // ════════════════════════════════════════════════
